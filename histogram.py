@@ -3,8 +3,11 @@
 #       install on linux with 
 #           sudo apt-get install imagemagick
 import sys,cv2
+import skvideo.io
+#import skvideo.io as skvid
 import numpy as np
 from PIL import Image
+from moviepy.editor import VideoFileClip
 
 
 def init_img():
@@ -17,16 +20,24 @@ def init_img():
     return img
 
 
+def init_vid():
+    def_vid = 'vid/aerial.mp4'
+    cap = skvideo.io.vreader('vid/aerial.mp4')
+    print(cap)
+    
+
+
+
 def init_hist(img):
     ''' assume each byte in pixel is same '''
     si = 255
     histogram = np.zeros(si,np.int8)
     #print(histogram)
 
-    for elem in img:
-        for pixel in elem:
-            print(pixel[0],end=' ')
-        print('')
+    #for elem in img:
+    #    for pixel in elem:
+    #        print(pixel[0],end=' ')
+    #    print('')
     
     
     
@@ -34,6 +45,7 @@ def init_hist(img):
 
 def driver():
     img = init_img()
+    init_vid()
     init_hist(img)
 
 
