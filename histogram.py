@@ -12,26 +12,28 @@ def init_img():
         filepath = sys.argv[1]
     else:
         filepath = def_img
-    #img = Image.open(filepath)
-    #img.show()
     img = cv2.imread(filepath)
-    print(type(img))
+    return img
+
+
+def historgram(img):
+    x = img[0]
+    r = x[0]
+    print(x)
+    print(type(x))
+    print('')
+    print(r)
+    print(type(r))
+    #for x in img:
+    #    print(x,end=' ')
     
 
 
 
 
-
-def historgram():
-    pass
-    #print(Image)
-
-
-
 def driver():
-    init_img()
-    historgram()
-
+    img = init_img()
+    historgram(img)
 
 
 if __name__ == '__main__':
