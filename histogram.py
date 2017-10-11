@@ -6,10 +6,7 @@ import sys,cv2
 import skvideo.io
 import numpy as np
 from PIL import Image
-
-# for efficiency measure
-#   remove later
-import time
+from math import floor
 
 
 def init_img():
@@ -61,42 +58,21 @@ def init_hist(img):
 
 
 
-'''
-def practice_histogram(L,M,N,n_k):
-    p_r = np.array([n/(M*N) for n in n_k])
-    s_l = []
-    for k,p in enumerate(p_r):
-        s_k = 0
-        for i in range(k+1):
-            s_k += (L-1)*p_r[i]
-        s_l.append(s_k)
-    s = np.array(s_l)
-    return s
-'''
-
-'''
-def practice_histogram(L,M,N,n_k):
-    p_r = np.array([n/(M*N) for n in n_k])
-    s_l = []
-    for k,p in enumerate(p_r):
-        s_k = 0
-        for i in range(k+1):
-            s_k += (L-1)*p_r[i]
-        s_l.append(s_k)
-
-        s_k = (L-1)*reduce((lambda x,y: x+y),range(k+1))
-
-    s = np.array(s_l)
-    return s
-'''
-
-
-
-def gen_transform(L,M,N,n_k):
-    p_r = np.array([n/(M*N) for n in n_k])
+def gen_transform(L,p_r):
     return np.array( \
         [round((L-1)*sum(p_r[i] for i in range(k+1))) \
         for k in range(len(p_r))])
+
+
+def gen_proportions(L,M,N,n_k):
+    return np.array([n/(M*N) for n in n_k])
+
+
+# perhaps this works?
+def transform_image(img,tran_func):
+    for i,pixel in enumerate(img):
+        img[i] = img[tran_func[pixel]]
+    return img
 
 
 def practice_driver():
@@ -106,18 +82,25 @@ def practice_driver():
 
     # number of pixels at certain intensity
     n_k = np.array([790,1023,850,656,329,245,122,81])
-    s = gen_transform(L,M,N,n_k)
-    print(s)
 
+    p = gen_proportions(L,M,N,n_k)
+    s = gen_transform(L,p)
+
+
+    print(s)
 
 
 
 def driver():
     img = init_img()
-    #init_vid()
     init_hist(img)
 
 
 if __name__ == '__main__':
     #driver()
     practice_driver()
+
+
+
+
+# histogram equalization
