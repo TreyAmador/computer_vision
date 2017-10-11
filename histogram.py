@@ -7,6 +7,10 @@ import skvideo.io
 import numpy as np
 from PIL import Image
 
+# for efficiency measure
+#   remove later
+import time
+
 
 def init_img():
     def_img = 'img/forest.png'
@@ -57,27 +61,53 @@ def init_hist(img):
 
 
 
-
-
+'''
 def practice_histogram(L,M,N,n_k):
-    #p_r = np.array([n/(M*N) for n in n_k])
-    p_r = np.array([0.19,0.25,0.21,0.16,0.08,0.06,0.03,0.02])
+    p_r = np.array([n/(M*N) for n in n_k])
+    s_l = []
     for k,p in enumerate(p_r):
         s_k = 0
         for i in range(k+1):
             s_k += (L-1)*p_r[i]
-        print(s_k)
+        s_l.append(s_k)
+    s = np.array(s_l)
+    return s
+'''
 
+'''
+def practice_histogram(L,M,N,n_k):
+    p_r = np.array([n/(M*N) for n in n_k])
+    s_l = []
+    for k,p in enumerate(p_r):
+        s_k = 0
+        for i in range(k+1):
+            s_k += (L-1)*p_r[i]
+        s_l.append(s_k)
+
+        s_k = (L-1)*reduce((lambda x,y: x+y),range(k+1))
+
+    s = np.array(s_l)
+    return s
+'''
+
+
+
+def gen_transform(L,M,N,n_k):
+    p_r = np.array([n/(M*N) for n in n_k])
+    return np.array( \
+        [round((L-1)*sum(p_r[i] for i in range(k+1))) \
+        for k in range(len(p_r))])
 
 
 def practice_driver():
     L = 8
     M = 64
     N = 64
+
+    # number of pixels at certain intensity
     n_k = np.array([790,1023,850,656,329,245,122,81])
-    practice_histogram(L,M,N,n_k)
-
-
+    s = gen_transform(L,M,N,n_k)
+    print(s)
 
 
 
