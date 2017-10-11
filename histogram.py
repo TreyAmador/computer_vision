@@ -41,8 +41,6 @@ def hist_values(img):
     cols = len(img[0])
     N = rows*cols
     intensity = 256
-    
-
 
 
 def init_hist(img):
@@ -60,6 +58,30 @@ def init_hist(img):
 
 
 
+
+def practice_histogram(L,M,N,n_k):
+    #p_r = np.array([n/(M*N) for n in n_k])
+    p_r = np.array([0.19,0.25,0.21,0.16,0.08,0.06,0.03,0.02])
+    for k,p in enumerate(p_r):
+        s_k = 0
+        for i in range(k+1):
+            s_k += (L-1)*p_r[i]
+        print(s_k)
+
+
+
+def practice_driver():
+    L = 8
+    M = 64
+    N = 64
+    n_k = np.array([790,1023,850,656,329,245,122,81])
+    practice_histogram(L,M,N,n_k)
+
+
+
+
+
+
 def driver():
     img = init_img()
     #init_vid()
@@ -67,4 +89,5 @@ def driver():
 
 
 if __name__ == '__main__':
-    driver()
+    #driver()
+    practice_driver()
