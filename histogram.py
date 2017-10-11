@@ -2,8 +2,8 @@
 #   requires imagemagick to display pictures
 #       install on linux with
 #           sudo apt-get install imagemagick
-import sys,cv2
-import skvideo.io
+import sys#,cv2
+#import skvideo.io
 import numpy as np
 from PIL import Image
 from math import floor
@@ -16,7 +16,8 @@ def init_img():
         filepath = sys.argv[1]
     else:
         filepath = def_img
-    img = cv2.imread(filepath)
+    #img = cv2.imread(filepath)
+    img = np.asarray(Image.open('img/bay.jpg'))
     pixels = np.array([[col[0] for col in row] for row in img])
     return pixels
 
@@ -114,7 +115,7 @@ if __name__ == '__main__':
 
 
 
-
+'''
 # additional functionality testing video
 def init_vid():
     def_vid = 'vid/aerial.mp4'
@@ -133,7 +134,7 @@ def init_vid():
         if index >= 0:
             break
 
-
+'''
 
 
 
