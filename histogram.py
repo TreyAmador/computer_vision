@@ -9,12 +9,9 @@ from PIL import Image
 from math import floor
 
 
-import scipy.misc as misc
-
-
 
 def init_img():
-    def_img = 'img/forest.png'
+    def_img = 'img/bay.jpg'
     if len(sys.argv) > 1:
         filepath = sys.argv[1]
     else:
@@ -45,7 +42,10 @@ def gen_transform(L,p_r):
         for k in range(len(p_r))])
 
 
-def gen_proportions(L,M,N,n_k):
+
+
+
+def gen_proportions(M,N,n_k):
     return np.array([n/(M*N) for n in n_k])
 
 
@@ -56,16 +56,33 @@ def transform_image(img,tran_func):
     return img
 
 
+def trans_image(img,trans):
+    for r,row in enumerate(img):
+        for c,col in enumerate(row):
+            #print(trans[col],end=' ')
+            # TODO fix this function!
+            img[r][c] = (trans[col]/4.0)*255
+    return img
+
+
 def practice_driver():
 
     img = init_img()
     M,N,L = img_dimensions(img)
     intensity = gen_intensity(img,M,N,L)
+    p = gen_proportions(M,N,intensity)
 
-    #new_img = Image.fromarray(img)
-    #new_img.save('img/output.png')
 
-    
+    # gets weird around here
+    s = gen_transform(L,p)
+
+
+    img = trans_image(img,s)
+
+    new_img = Image.fromarray(img)
+    new_img.save('img/output.png')
+
+
 
 
 
@@ -76,8 +93,9 @@ def practice_driver():
     # number of pixels at certain intensity
     n_k = np.array([790,1023,850,656,329,245,122,81])
 
-    p = gen_proportions(L,M,N,n_k)
+    p = gen_proportions(M,N,n_k)
     s = gen_transform(L,p)
+    print(s)
 
 
 
