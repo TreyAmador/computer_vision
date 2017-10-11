@@ -9,6 +9,10 @@ from PIL import Image
 from math import floor
 
 
+import scipy.misc as misc
+
+
+
 def init_img():
     def_img = 'img/forest.png'
     if len(sys.argv) > 1:
@@ -16,46 +20,23 @@ def init_img():
     else:
         filepath = def_img
     img = cv2.imread(filepath)
-    return img
+    pixels = np.array([[col[0] for col in row] for row in img])
+    return pixels
 
 
-def init_vid():
-    def_vid = 'vid/aerial.mp4'
-    skvideo.io.setFFmpegPath('/usr/bin/ffmpeg')
-    if len(sys.argv) > 1:
-        filepath = sys.argv[1]
-    else:
-        filepath = def_vid
-    vidgen = skvideo.io.vreader(filepath)
-    for index,frame in enumerate(vidgen):
-
-        print(frame)
-
-
-        # just for the purposes of testing one frame at a time
-        if index >= 0:
-            break
-
-
-def hist_values(img):
+def img_dimensions(img):
     rows = len(img)
     cols = len(img[0])
-    N = rows*cols
     intensity = 256
+    return rows,cols,intensity
 
 
-def init_hist(img):
-    ''' assume each byte in pixel is same '''
-    si = 255
-    histogram = np.zeros(si,np.int8)
-    hist_values(img)
-    #print(histogram)
-
-    #for elem in img:
-    #    for pixel in elem:
-    #        print(pixel[0],end=' ')
-    #    print('')
-
+def gen_intensity(img,M,N,L):
+    intensity = np.zeros(L,np.uint8)
+    for row in img:
+        for pixel in row:
+            intensity[pixel] += 1
+    return intensity
 
 
 def gen_transform(L,p_r):
@@ -76,6 +57,18 @@ def transform_image(img,tran_func):
 
 
 def practice_driver():
+
+    img = init_img()
+    M,N,L = img_dimensions(img)
+    intensity = gen_intensity(img,M,N,L)
+
+    #new_img = Image.fromarray(img)
+    #new_img.save('img/output.png')
+
+    
+
+
+
     L = 8
     M = 64
     N = 64
@@ -87,18 +80,42 @@ def practice_driver():
     s = gen_transform(L,p)
 
 
-    print(s)
-
-
 
 def driver():
     img = init_img()
-    init_hist(img)
+    #init_hist(img)
 
 
 if __name__ == '__main__':
     #driver()
     practice_driver()
+
+
+
+
+
+
+
+
+# additional functionality testing video
+def init_vid():
+    def_vid = 'vid/aerial.mp4'
+    skvideo.io.setFFmpegPath('/usr/bin/ffmpeg')
+    if len(sys.argv) > 1:
+        filepath = sys.argv[1]
+    else:
+        filepath = def_vid
+    vidgen = skvideo.io.vreader(filepath)
+    for index,frame in enumerate(vidgen):
+
+        print(frame)
+
+
+        # just for the purposes of testing one frame at a time
+        if index >= 0:
+            break
+
+
 
 
 
