@@ -1,9 +1,59 @@
-# medium filter algorithm
-from PIL import Image
+from Pillow import Image
 import numpy as np
-from copy import deepcopy
 import sys
 
+
+def init_img():
+    def_img = 'img/tab.jpg'
+    if len(sys.argv) > 1:
+        filepath = sys.argv[1]
+    else:
+        filepath = def_img
+    img = np.asarray(Image.open(def_img))
+    pixels = np.array([[col[0] for col in row] for row in img])
+    return pixels
+
+
+
+def gaussian_smooth(img):
+    pass
+
+
+def img_derivative(img):
+    pass
+
+
+def gradient_mag_ori(img):
+    pass
+
+
+def non_max_suppress(img):
+    pass
+
+
+def hysteresis_thresh(img):
+    pass
+
+
+
+def driver():
+    img = init_image()
+    img = gaussian_smooth(img)
+    img = img_derivative(img)
+    img = gradient_mag_ori(img)
+    img = non_max_suppress(img)
+    img = hysteresis_thresh(img)
+
+
+if __name__ == '__main__':
+    driver()
+
+
+
+
+'''
+
+# functions for gaussian filter
 
 def init_img(filepath):
     if len(sys.argv) > 1:
@@ -42,17 +92,15 @@ def apply_filter(img,dim):
 def driver():
     size = 3
     img = init_img('img/sample.jpg')
-    #M,N,L,A = get_attr(img,size)
     fltrd = apply_filter(img,size)
     new_img = Image.fromarray(fltrd)
     new_img.save('img/sample_out.jpg')
 
 
-
 if __name__ == '__main__':
     driver()
 
-
+'''
 
 
 
