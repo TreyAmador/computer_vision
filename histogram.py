@@ -2,16 +2,14 @@
 #   requires imagemagick to display pictures
 #       install on linux with
 #           sudo apt-get install imagemagick
-import sys#,cv2
-#import skvideo.io
-import numpy as np
-from PIL import Image
 from math import floor
-
+from PIL import Image
+import numpy as np
+import sys
 
 
 def init_img():
-    def_img = 'img/small.jpg'
+    def_img = 'img/tab.jpg'
     if len(sys.argv) > 1:
         filepath = sys.argv[1]
     else:
@@ -74,24 +72,18 @@ def trans_image(img,trans):
 
 
 def driver():
-
-
     img = init_img()
     M,N,L = img_dimensions(img)
     intensity = gen_intensity(img,M,N,L)
     p = gen_proportions(M,N,intensity)
 
-    #print(p)
-
     # gets weird around here
     s = gen_transform(L,p)
-    #print(s)
-
-
+    
     img = trans_image(img,s)
     new_img = Image.fromarray(img)
     new_img.save('img/output.jpg')
-    
+
 
 
 
@@ -112,7 +104,7 @@ def driver():
 
 if __name__ == '__main__':
     driver()
-    
+
 
 
 

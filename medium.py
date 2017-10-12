@@ -1,24 +1,14 @@
 # medium filter algorithm
 from PIL import Image
 import numpy as np
+from copy import deepcopy
 import sys
 
-'''
-def init_img(filepath):
-    def_img = filepath
-    img = np.asarray(Image.open(def_img))
-    pixels = np.array([[col[0] for col in row] for row in img])
-    return pixels
-'''
-
 
 def init_img(filepath):
-    def_img = 'img/small.jpg'
     if len(sys.argv) > 1:
         filepath = sys.argv[1]
-    else:
-        filepath = def_img
-    img = np.asarray(Image.open(def_img))
+    img = np.asarray(Image.open(filepath))
     pixels = np.array([[col[0] for col in row] for row in img])
     return pixels
 
@@ -34,35 +24,36 @@ def get_attr(img,dim):
     return M,N,L,A
 
 
+# TODO fix this
+# this offsets the image
 def apply_filter(img,dim):
-    fltrd = gen_2d(len(img))
     off = int(dim/2)
-    for i in range(off,len(img)-off):
-        for j in range(off,len(img[i])-off):
+    fltrd = deepcopy(img)
+    for i in range(dim,len(img)-dim):
+        for j in range(dim,len(img[i])-dim):
             fltr_sum = 0
-            print('(',i,'x',j,')',end=', ')
             for s in range(dim):
                 for t in range(dim):
-                    fltr_sum += img[s][t]
+                    fltr_sum += img[s+i][t+j]
             fltrd[i][j] = fltr_sum/(dim*dim)
     return fltrd
 
 
 def driver():
     size = 3
-    img = init_img('img/small.jpg')
-    print('image initialized')
-    M,N,L,A = get_attr(img,3)
-    print('attributes retrieved')
-    filtered = apply_filter(img,M)
-    print('image filtered')
-    npimage = np.array(filtered)
-    print('np array made')
-    img_fltrd = Image.fromarray(npimage)
-    img_fltrd.save('out.jpg')
+    img = init_img('img/sample.jpg')
+    #M,N,L,A = get_attr(img,size)
+    fltrd = apply_filter(img,size)
+    new_img = Image.fromarray(fltrd)
+    new_img.save('img/sample_out.jpg')
 
 
 
 if __name__ == '__main__':
     driver()
 
+
+
+
+
+# medium
