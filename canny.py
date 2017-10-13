@@ -3,6 +3,7 @@ from PIL import Image
 import numpy as np
 from copy import deepcopy
 import sys
+import math
 
 
 def init_img(filepath):
@@ -19,11 +20,24 @@ def save_img(filepath,pixels):
 
 
 def apply_canny(img):
+
     fltrd = gaussian_smooth(img,3)
-    drvtv = derivative(fltrd)
-    gradient_mag_ori(drvtv)
-    non_max_suppress(img)
-    hysteresis_thresh(img)
+
+    dx,dy = derivative_xy(fltrd)
+    #save_img('img/dx.jpg',np.array(dx))
+    #save_img('img/dy.jpg',np.array(dy))
+
+    #dx_dy = sum_derivatives(dx,dy)
+    #save_img('img/dx+dy.jpg',np.array(dx_dy))
+
+    magn, origin = gradient_magn_origin(dx,dy)
+
+    save_img('img/magnitude.jpg',np.array(magn))
+
+
+    #non_max_suppress(img)
+    #hysteresis_thresh(img)
+
     return fltrd
 
 
@@ -51,13 +65,42 @@ def derivative(img):
     return drvtv
 
 
-def gradient_mag_ori(img):
+def derivative_xy(img):
+    dx,dy = deepcopy(img),deepcopy(img)
+    for i in range(1,len(img)-1):
+        for j in range(1,len(img[i])-1):
+            dx[i][j] = img[i+1][j] - img[i][j]
+            dy[i][j] = img[i][j+1] - img[i][j]
+    return dx,dy
+
+
+def sum_derivatives(dx,dy):
+    img = deepcopy(dx)
+    for i in range(len(img)):
+        for j in range(len(img[i])):
+            img[i][j] = dx[i][j] + dy[i][j]
+    return img
+
+
+'''
+def gradient_magn_origin(img):
     magnitude = deepcopy(img)
     origin = deepcopy(img)
     for i in range(1,len(img)-1):
         for j in range(1,len(img[i])-1):
             pass
     return magnitude,origin
+'''
+
+
+
+def gradient_magn_origin(dx,dy):
+    magn,origin = deepcopy(dx),deepcopy(dy)
+    for i in range(len(magn)):
+        for j in range(len(magn[i])):
+            magn[i][j] = math.sqrt(math.pow(dx[i][j],2)+math.pow(dy[i][j],2))
+            origin[i][j] = math.atan2(dy[i][j],dx[i][j])
+    return magn,origin
 
 
 def non_max_suppress(img):
@@ -70,10 +113,10 @@ def hysteresis_thresh(img):
 
 
 def driver():
-    filepath = 'img/sample.jpg'
+    filepath = 'img/hills.jpg'
     img = init_img(filepath)
     fltrd = apply_canny(img)
-    save_img('img/sample_out.jpg',fltrd)
+    save_img('img/hills_out.jpg',fltrd)
 
 
 if __name__ == '__main__':

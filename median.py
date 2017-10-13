@@ -40,7 +40,7 @@ def apply_filter(img,dim):
 
 def driver():
     size = 3
-    img = init_img('img/sample.jpg')
+    img = init_img('img/bay.jpg')
     fltrd = apply_filter(img,size)
     save_img('img/sample_out.jpg',fltrd)
 
