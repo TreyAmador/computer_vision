@@ -55,7 +55,7 @@ def save_img(filepath,pixels):
     if len(sys.argv) > 1:
         filepath = sys.argv[1]
     t = filepath.split('.')
-    filepath = '.'.join(t[:-1])+'_out.'+t[-1]
+    filepath = '.'.join(t[:-1])+'_histogram.'+t[-1]
     img = Image.fromarray(pixels)
     img.save(filepath)
 
