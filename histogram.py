@@ -11,8 +11,8 @@ import sys
 def init_img(filepath):
     if len(sys.argv) > 1:
         filepath = sys.argv[1]
-    img = np.asarray(Image.open(filepath))
-    pixels = np.array([[col[0] for col in row] for row in img])
+    img = np.asarray(Image.open(filepath).convert('L'))
+    pixels = np.array([[col for col in row] for row in img])
     return pixels
 
 
@@ -61,7 +61,7 @@ def save_img(filepath,pixels):
 
 
 def driver():
-    filepath = 'img/block.png'
+    filepath = 'img/mountain.jpg'
     img = init_img(filepath)
     M,N,L = img_dimensions(img)
     intensity = gen_intensity(img,M,N,L)

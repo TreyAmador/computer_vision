@@ -1,9 +1,9 @@
 # apply canny filter
+from copy import deepcopy
 from PIL import Image
 import numpy as np
-from copy import deepcopy
-import sys
 import math
+import sys
 
 
 def init_img(filepath):
@@ -80,18 +80,6 @@ def sum_derivatives(dx,dy):
         for j in range(len(img[i])):
             img[i][j] = dx[i][j] + dy[i][j]
     return img
-
-
-'''
-def gradient_magn_origin(img):
-    magnitude = deepcopy(img)
-    origin = deepcopy(img)
-    for i in range(1,len(img)-1):
-        for j in range(1,len(img[i])-1):
-            pass
-    return magnitude,origin
-'''
-
 
 
 def gradient_magn_origin(dx,dy):
