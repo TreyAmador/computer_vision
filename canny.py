@@ -26,6 +26,42 @@ def gaussian_smooth(img,dim):
     return fltrd
 
 
+def gen_kernels():
+    kx = [[1,0,-1],[2,0,-2],[1,0,-1]]
+    ky = [[1,2,1],[0,0,0],[-1,-2,-1]]
+    return kx,ky
+
+
+'''
+def sobel_filter(img):
+    dx = deepcopy(img)
+    dy = deepcopy(img)
+    kx,ky = gen_kernels()
+    for di in range(len(dx)-2):
+        for dj in range(len(dx[di])-2):
+            k = 0
+            for ki in range(len(kx)):
+                for kj in range(len(kx[ki])):
+                    k += dx[di+ki][dj+kj] + kx[ki][kj]
+            dx[di+1][dj+1] = k
+    return dx,dy
+'''
+
+# this works!
+def sobel_filter(img):
+    dx = deepcopy(img)
+    dy = deepcopy(img)
+    kx,ky = gen_kernels()
+    for xi in range(len(dx)-2):
+        for xj in range(len(dx[xi])-2):
+            ks = 0
+            for ki in range(len(kx)):
+                for kj in range(len(kx[ki])):
+                    ks += dx[xi+ki][xj+kj] * kx[ki][kj]
+            dx[xi][xj] = abs(ks/9)
+    return dx,dy
+
+
 def derivative_xy(img):
     dx = deepcopy(img)
     dy = deepcopy(img)
@@ -59,12 +95,17 @@ def driver():
     filepath = 'img/valve.png'
     img = init_img(filepath)
     smt = gaussian_smooth(img,3)
-    dx,dy = derivative_xy(smt)
-    magn = gradient_magnitude(dx,dy)
+
+    #dx,dy = derivative_xy(smt)
+    #magn = gradient_magnitude(dx,dy)
     #save_img(filepath,blur)
     #save_img('img/valve_dx.png',dx)
     #save_img('img/valve_dy.png',dy)
-    save_img('img/valve_gradient.png',magn)
+    #save_img('img/valve_gradient.png',magn)
+
+    dx,dy = sobel_filter(smt)
+    save_img('img/valve_dx.png',dx)
+    #save_img('img/valve_dy.png',dy)
 
 
 
