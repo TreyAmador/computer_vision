@@ -32,8 +32,8 @@ def derivative_xy(img):
     k = [1,-1]
     for i in range(1,len(img)-1):
         for j in range(1,len(img[i])-1):
-            dx[i][j+1] = abs(k[0]*img[i][j]+k[1]*img[i][j+1])
-            dy[i+1][j] = abs(k[0]*img[i][j]+k[1]*img[i+1][j])
+            dx[i][j] = abs(k[0]*img[i][j]+k[1]*img[i][j+1])
+            dy[i][j] = abs(k[0]*img[i][j]+k[1]*img[i+1][j])
     return dx,dy
 
 
@@ -41,10 +41,10 @@ def gradient_magnitude(dx,dy):
     magn = deepcopy(dx)
     theta = deepcopy(dy)
     for i in range(len(dx)):
-        for j in range(len(dx[0])):
-            magn[i][j] = math.sqrt( \
-                math.pow(dx[i][j],2) + math.pow(dy[i][j],2))
-    return magn
+        for j in range(len(dx[i])):
+            magn[i][j] = math.sqrt(math.pow(dx[i][j],2)+math.pow(dy[i][j],2))
+            theta[i][j] = math.atan2(dy[i][j],dx[i][j])
+    return magn,theta
 
 
 def save_img(filepath,pixels):
@@ -61,9 +61,14 @@ def driver():
     img = init_img(filepath)
     smt = gaussian_smooth(img,3)
     dx,dy = derivative_xy(smt)
+    magn,theta = gradient_magnitude(dx,dy)
 
     save_img('img/valve_dx.png',dx)
     save_img('img/valve_dy.png',dy)
+    save_img('img/valve_magn.png',magn)
+    save_img('img/valve_theta.png',theta)
+
+
 
 
 if __name__ == '__main__':
