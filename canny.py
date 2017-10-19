@@ -30,6 +30,10 @@ def gen_kernels():
     return kx,ky
 
 
+def compass():
+    return [(0,1),(1,1),(1,0),(1,-1),(0,-1),(-1,-1),(-1,0),(-1,1)]
+
+
 # hardcoded for now
 # returns (row,col) tuple
 def round_angle(rad):
@@ -127,6 +131,27 @@ def non_max_suppress(rho,theta):
     return rho
 
 
+def hysteresis(img,high,low):
+    edge = new_pixels(img)
+    for i in range(1,len(img)-1):
+        for j in range(1,len(img[i])-1):
+            if img[i][j] > high:
+                edge[i][j] = 255
+            elif img[i][j] < low:
+                edge[i][j] = 0
+            else:
+                
+                m = 0
+                r,s = -1,-1
+                for p,q in compass():
+                    if edge[p][q] >= m:
+                        m = edge[p][q]
+                        r,s = p,q
+                if r > 0 and s > 0:
+                    edge[r][s] = 255
+    return edge
+
+
 def print_matrix(matrix):
     for row in matrix:
         for pixel in row:
@@ -152,14 +177,18 @@ def driver():
     save_img('img/valve_magnitude.png',rho)
     thin = non_max_suppress(rho,theta)
     save_img('img/valve_suppressed.png',thin)
+    edge = hysteresis(thin,20,10)
+    save_img('img/valve_canny.png',edge)
 
-
-
-    #save_img('img/valve_theta.png',theta)
 
 
 if __name__ == '__main__':
     driver()
+
+
+
+
+
 
 
 
