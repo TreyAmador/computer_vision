@@ -34,40 +34,68 @@ def compass():
     return [(0,1),(1,1),(1,0),(1,-1),(0,-1),(-1,-1),(-1,0),(-1,1)]
 
 
+'''
 # hardcoded for now
 # returns (row,col) tuple
 def round_angle(rad):
     deg = degrees(rad)
     if -22.5 <= deg <= 22.5:
+        return radians(0.0),0,1
+    elif 22.5 < deg <= 67.5:
+        return radians(45.0),1,1
+    elif -67.5 <= deg < -22.5:
+        return radians(135.0),1,-1
+    elif 67.5 < deg <= 112.5:
+        return radians(90.0),1,0
+    elif -112.5 <= deg < -67.5:
+        return radians(90.0),1,0
+    elif 112.5 < deg <= 157.5:
+        return radians(135.0),1,-1
+    elif -157.5 <= deg < -112.5:
+        return radians(90.0),1,0
+    elif 157.5 < deg <= 180.0:
+        return radians(0.0),0,1
+    elif -180.0 <= deg < -157.5:
+        return radians(45.0),1,1
+    else:
+        return radians(0.0),0,1
+'''
+
+
+
+def round_angle(rad):
+    deg = degrees(rad)
+    if -22.5 <= deg <= 22.5:
         return 0,1
-        return radians(0.0)
     elif 22.5 < deg <= 67.5:
         return 1,1
-        return radians(45.0)
     elif -67.5 <= deg < -22.5:
         return 1,-1
-        return radians(135.0)
     elif 67.5 < deg <= 112.5:
         return 1,0
-        return radians(90.0)
     elif -112.5 <= deg < -67.5:
         return 1,0
-        return radians(90.0)
     elif 112.5 < deg <= 157.5:
         return 1,-1
-        return radians(135.0)
     elif -157.5 <= deg < -112.5:
         return 1,0
-        return radians(90.0)
     elif 157.5 < deg <= 180.0:
         return 0,1
-        return radians(0.0)
     elif -180.0 <= deg < -157.5:
         return 1,1
-        return radians(45.0)
     else:
         return 0,1
-        return radians(0.0)
+
+
+# don't work....
+def are_similar(a,b):
+    if len(a) != len(b) or len(a[0]) != len(b[0]):
+        return False
+    for i in range(len(a)):
+        for j in range(len(a[i])):
+            if a[i][j] != b[i][j]:
+                return False
+    return True
 
 
 def gaussian_smooth(img,dim):
@@ -131,24 +159,20 @@ def non_max_suppress(rho,theta):
     return rho
 
 
-def hysteresis(img,high,low):
-    edge = new_pixels(img)
-    for i in range(1,len(img)-1):
-        for j in range(1,len(img[i])-1):
-            if img[i][j] > high:
+def hysteresis(rho,theta,high,low):
+    edge = new_pixels(rho)
+    for i in range(1,len(rho)-1):
+        for j in range(1,len(rho[i])-1):
+            if rho[i][j] > high:
                 edge[i][j] = 255
-            elif img[i][j] < low:
+            elif rho[i][j] < low:
                 edge[i][j] = 0
             else:
-                
-                m = 0
-                r,s = -1,-1
-                for p,q in compass():
-                    if edge[p][q] >= m:
-                        m = edge[p][q]
-                        r,s = p,q
-                if r > 0 and s > 0:
-                    edge[r][s] = 255
+                p,q = round_angle(theta[i][j])
+                if rho[i+p][j+q] > high or rho[i-p][j-q] > high:
+                    edge[i][j] = 255
+                if rho[i+p][j+q] < low or rho[i-p][j-q] < low:
+                    edge[i][j] = 0
     return edge
 
 
@@ -176,8 +200,11 @@ def driver():
     rho,theta = gradient_magnitude(dx,dy)
     save_img('img/valve_magnitude.png',rho)
     thin = non_max_suppress(rho,theta)
+
+
+
     save_img('img/valve_suppressed.png',thin)
-    edge = hysteresis(thin,20,10)
+    edge = hysteresis(thin,theta,20,10)
     save_img('img/valve_canny.png',edge)
 
 
