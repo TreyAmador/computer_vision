@@ -2,6 +2,8 @@ from copy import deepcopy
 from PIL import Image
 import numpy as np
 import math
+from math import radians
+from math import degrees
 import time
 import sys
 
@@ -10,8 +12,16 @@ def init_img(filepath):
     if len(sys.argv) > 1:
         filepath = sys.argv[1]
     img = np.asarray(Image.open(filepath).convert('L'))
-    pixels = np.array([[col for col in row] for row in img])
+    pixels = np.array(img)
     return pixels
+
+
+def new_pixels(img):
+    return np.zeros(shape=(len(img),len(img[0])),dtype=np.uint8)
+
+
+def new_gradient(img):
+    return np.zeros(shape=(len(img),len(img[0])))
 
 
 def gen_kernels():
@@ -20,27 +30,36 @@ def gen_kernels():
     return kx,ky
 
 
+# hardcoded for now
 def round_angle(rad):
-    deg = (180/math.pi)*rad
-    if 0 <= deg < 45:
-        pass
-        #print(deg,end=' ')
-    elif 45 <= deg < 90:
-        pass
-        #print(deg,end=' ')
-    elif 90 <= deg < 135:
-        pass
-        #print(deg,end=' ')
-    elif 135 <= deg < 180:
-        print(deg,end=' ')
+    deg = degrees(rad)
+    if -22.5 <= deg <= 22.5:
+        return radians(0.0)
+    elif 22.5 < deg <= 67.5:
+        return radians(45.0)
+    elif -67.5 <= deg < -22.5:
+        return radians(135.0)
+    elif 67.5 < deg <= 112.5:
+        return radians(90.0)
+    elif -112.5 <= deg < -67.5:
+        return radians(90.0)
+    elif 112.5 < deg <= 157.5:
+        return radians(135.0)
+    elif -157.5 <= deg < -112.5:
+        return radians(90.0)
+    elif 157.5 < deg <= 180.0:
+        return radians(0.0)
+    elif -180.0 <= deg < -157.5:
+        return radians(45.0)
     else:
-        print('\n\nnot in value\n')
-    return rad
+        return radians(0.0)
 
 
 def gaussian_smooth(img,dim):
     off = int(dim/2)
-    fltrd = deepcopy(img)
+    #fltrd = deepcopy(img)
+    #fltrd = np.zeros(shape=(len(img),len(img[0])))
+    fltrd = new_pixels(img)
     for i in range(off,len(img)-off):
         for j in range(off,len(img[i])-off):
             fltr_sum = 0
@@ -53,8 +72,13 @@ def gaussian_smooth(img,dim):
 
 # this works, but is not being using
 def sobel_filter(img):
-    dx = deepcopy(img)
-    dy = deepcopy(img)
+
+    #dx = deepcopy(img)
+    #dy = deepcopy(img)
+
+    dx = new_gradient(img)
+    dy = new_gradient(img)
+
     kx,ky = gen_kernels()
     for i in range(len(img)-2):
         for j in range(len(img[i])-2):
@@ -70,19 +94,33 @@ def sobel_filter(img):
 
 
 def derivative_xy(img):
-    dx = deepcopy(img)
-    dy = deepcopy(img)
+
+    #dx = np.zeros(shape=(len(img),len(img[0])))
+    #dy = np.zeros(shape=(len(img),len(img[0])))
+    #dx = deepcopy(img)
+    #dy = deepcopy(img)
+
+    dx = new_gradient(img)
+    dy = new_gradient(img)
     k = [1,-1]
     for i in range(1,len(img)-1):
         for j in range(1,len(img[i])-1):
-            dx[i][j] = abs(k[0]*img[i][j]+k[1]*img[i][j+1])
-            dy[i][j] = abs(k[0]*img[i][j]+k[1]*img[i+1][j])
+            dx[i][j] = (k[0]*img[i][j]+k[1]*img[i][j+1])
+            dy[i][j] = (k[0]*img[i][j]+k[1]*img[i+1][j])
     return dx,dy
 
 
 def gradient_magnitude(dx,dy):
-    rho = deepcopy(dx)
-    theta = np.array([[0.0 for y in range(len(dx[0]))] for x in range(len(dx))])
+
+    #rho = deepcopy(dx)
+    #theta = np.array([[0.0 for y in range(len(dx[0]))] for x in range(len(dx))])
+
+    #rho = new_gradient(dx)
+    #theta = new_gradient(dx)
+
+    rho = new_pixels(dx)
+    theta = new_gradient(dx)
+
     for i in range(len(dx)):
         for j in range(len(dx[i])):
             rho[i][j] = math.sqrt(math.pow(dx[i][j],2)+math.pow(dy[i][j],2))
@@ -94,6 +132,9 @@ def non_max_suppress(rho,theta):
     for i in range(len(theta)):
         for j in range(len(theta[i])):
             theta[i][j] = round_angle(theta[i][j])
+    for i in range(len(theta)):
+        for j in range(len(theta[i])):
+            pass
 
 
 
