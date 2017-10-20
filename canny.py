@@ -133,31 +133,48 @@ def gradient_magnitude(dx,dy):
     return rho,theta
 
 
-def non_max_suppress(rho,theta):
-    for i in range(1,len(theta)-1):
-        for j in range(1,len(theta[i])-1):
-            p,q = round_angle(theta[i][j])
-            if rho[i][j] < rho[i+p][j+q] or rho[i][j] < rho[i-p][j-q]:
-                rho[i][j] = 0
-    return rho
-
-
-# TODO could optimize
 def hysteresis(rho,theta,high,low):
     edge = new_pixels(rho)
+    pixels = []
     for i in range(1,len(rho)-1):
         for j in range(1,len(rho[i])-1):
-            if rho[i][j] > high:
+            if rho[i][j] >= high:
                 edge[i][j] = 255
-            elif rho[i][j] < low:
+            elif rho[i][j] <= low:
                 edge[i][j] = 0
             else:
-                p,q = round_angle(theta[i][j])
-                if rho[i+p][j+q] > high or rho[i-p][j-q] > high:
+                for s in range(-1,2):
+                    for t in range(-1,2):
+                        max_pixel = -1
+                        if rho[i+s][j+t] >= high:
+                            max_pixel = rho[i+s][j+t]
+                if max_pixel >= high:
+                    pixels.append((i,j))
                     edge[i][j] = 255
-                if rho[i+p][j+q] < low or rho[i-p][j-q] < low:
-                    edge[i][j] = 0
+    while len(pixels) > 0:
+        strong_pixels = []
+        for i,j in pixels:
+            for s in range(-1,2):
+                for t in range(-1,2):
+                    if s == 0 and t == 0:
+                        continue
+                    i2 = i+s
+                    j2 = j+t
+                    if edge[i2][j2] > low and edge[i2][j2] < high:
+                        strong_pixels.append((i2,j2))
+                        edge[i2][j2] = 255
+        pixels = strong_pixels
     return edge
+
+
+def non_max_suppress(rho,theta):
+    thin = np.copy(rho)
+    for i in range(1,len(thin)-1):
+        for j in range(1,len(thin[i])-1):
+            p,q = round_angle(theta[i][j])
+            if thin[i][j] <= thin[i+p][j+q] or thin[i][j] <= thin[i-p][j-q]:
+                thin[i][j] = 0.0
+    return thin
 
 
 def canny_cv2(img,high,low):
@@ -187,8 +204,11 @@ def driver():
     dx,dy = sobel_filter(smt)
     rho,theta = gradient_magnitude(dx,dy)
     thin = non_max_suppress(rho,theta)
-    edge = hysteresis(thin,theta,200,100)
+
+    edge = hysteresis(thin,theta,100,50)
     save_img('img/valve_final.png',edge)
+
+
     cv2edge = canny_cv2(img,200,100)
     save_img('img/valve_final_cv2.png',cv2edge)
 
@@ -196,11 +216,6 @@ def driver():
 
 if __name__ == '__main__':
     driver()
-
-
-
-
-
 
 
 
