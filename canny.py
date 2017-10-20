@@ -1,14 +1,11 @@
-from copy import deepcopy
 from PIL import Image
 import numpy as np
-import math
-from math import radians
-from math import degrees
+from math import radians,degrees
 import time
+import math
 import sys
-import scipy
+import cv2
 from scipy.ndimage.filters import gaussian_filter
-
 
 
 def init_img(filepath):
@@ -84,8 +81,12 @@ def gaussian_smooth(img,dim):
     return fltrd
 
 
-def cv_gauss_smooth(img):
-    return gaussian_filter(img,1)
+#def cv_gauss_smooth(img):
+#    return gaussian_filter(img,1)
+
+
+def gaussian_blur_cv2(img):
+    return cv2.GaussianBlur(img,(3,3),0)
 
 
 def sobel_filter(img):
@@ -102,6 +103,13 @@ def sobel_filter(img):
             dx[i][j] = s
             dy[i][j] = t
     return dx,dy
+
+
+# test against cv2 sobel
+def sobel_cv2(img):
+    return \
+        cv2.Sobel(img,cv2.CV_64F,1,0), \
+        cv2.Sobel(img,cv2.CV_64F,0,1)
 
 
 def derivative_xy(img):
@@ -152,6 +160,10 @@ def hysteresis(rho,theta,high,low):
     return edge
 
 
+def canny_cv2(img,high,low):
+    return cv2.Canny(img,low,high)
+
+
 def print_matrix(matrix):
     for row in matrix:
         for pixel in row:
@@ -171,14 +183,14 @@ def save_img(filepath,pixels):
 def driver():
     filepath = 'img/valve.png'
     img = init_img(filepath)
-    smt = gaussian_smooth(img,3)
-    sx,sy = sobel_filter(smt)
-    rho,theta = gradient_magnitude(sx,sy)
-    save_img('img/valve_magnitude.png',rho)
+    smt = gaussian_blur_cv2(img)
+    dx,dy = sobel_filter(smt)
+    rho,theta = gradient_magnitude(dx,dy)
     thin = non_max_suppress(rho,theta)
-    save_img('img/valve_suppressed.png',thin)
     edge = hysteresis(thin,theta,100,50)
     save_img('img/valve_final.png',edge)
+    cv2edge = canny_cv2(img,200,100)
+    save_img('img/valve_final_cv2.png',cv2edge)
 
 
 
