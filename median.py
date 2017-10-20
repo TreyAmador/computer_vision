@@ -38,7 +38,15 @@ def apply_filter(img,dim):
     return fltrd
 
 
-def median_blur_cv2(img,size):
+def blur_opencv(img,size):
+    return cv2.blur(img,size)
+
+
+def gaussian_blur_opencv(img,size):
+    return cv2.GaussianBlur(img,size)
+
+
+def median_blur_opencv(img,size):
     return cv2.medianBlur(img,size)
 
 
@@ -48,7 +56,7 @@ def driver():
     fltrd = apply_filter(img,size)
     save_img('img/valve_median.png',fltrd)
 
-    img_cv2 = median_blur_cv2(img,size)
+    img_cv2 = median_blur_opencv(img,size)
     save_img('img/valve_median_cv2.jpg',img_cv2)
 
 

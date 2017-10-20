@@ -51,10 +51,6 @@ def trans_image(img,trans):
             img[r][c] = trans[col]
 
 
-def histogram_cv2(img):
-    return cv2.equalizeHist(img)
-
-
 def save_img(filepath,pixels):
     if len(sys.argv) > 1:
         filepath = sys.argv[1]
@@ -64,9 +60,7 @@ def save_img(filepath,pixels):
     img.save(filepath)
 
 
-def driver():
-    filepath = 'img/bay.jpg'
-    img = init_img(filepath)
+def histogram_equalization(img):
     M,N,L = img_dimensions(img)
     intensity = gen_intensity(img,M,N,L)
     p = gen_proportions(M,N,intensity)
@@ -74,8 +68,21 @@ def driver():
     trans_image(img,s)
     save_img(filepath,img)
 
+
+# used equalizeHist function, since i get
+#interpreter error that cv2 does not have
+# 'histogram' function
+def histogram_equalization_opencv(img):
     hist_cv2_img = histogram_cv2(img)
-    save_img('img/histogram_cv2.jpg',hist_cv2_img)
+    equalized = cv.equalizeHist(img)
+    save_img('img/histogram_cv2.jpg',equalized)
+
+
+def driver():
+    filepath = 'img/bay.jpg'
+    img = init_img(filepath)
+    histogram_equalization(filepath)
+    histogram_equalization_opencv(filepath)
 
 
 if __name__ == '__main__':

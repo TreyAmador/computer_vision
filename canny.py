@@ -186,17 +186,11 @@ def driver():
     smt = gaussian_blur_cv2(img)
     dx,dy = sobel_filter(smt)
     rho,theta = gradient_magnitude(dx,dy)
-
-    #sx,sy = sobel_cv2(smt)
-    #srho,stheta = gradient_magnitude(sx,sy)
-    #save_img('img/mag.png',rho)
-    #save_img('img/magcv2.png',srho)
-
     thin = non_max_suppress(rho,theta)
-    edge = hysteresis(thin,theta,100,50)
+    edge = hysteresis(thin,theta,200,100)
     save_img('img/valve_final.png',edge)
-    #cv2edge = canny_cv2(img,200,100)
-    #save_img('img/valve_final_cv2.png',cv2edge)
+    cv2edge = canny_cv2(img,200,100)
+    save_img('img/valve_final_cv2.png',cv2edge)
 
 
 
