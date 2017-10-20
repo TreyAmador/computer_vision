@@ -5,15 +5,14 @@
 from math import floor
 from PIL import Image
 import numpy as np
-import sys
+import sys,cv2
 
 
 def init_img(filepath):
     if len(sys.argv) > 1:
         filepath = sys.argv[1]
-    img = np.asarray(Image.open(filepath).convert('L'))
-    pixels = np.array([[col for col in row] for row in img])
-    return pixels
+    img = np.array(Image.open(filepath).convert('L'))
+    return img
 
 
 def img_dimensions(img):
@@ -45,10 +44,15 @@ def gen_transform(L,p_r):
     return s
 
 
+# works against opencv histogram equalization
 def trans_image(img,trans):
     for r,row in enumerate(img):
         for c,col in enumerate(row):
             img[r][c] = trans[col]
+
+
+def histogram_cv2(img):
+    return cv2.equalizeHist(img)
 
 
 def save_img(filepath,pixels):
@@ -61,7 +65,7 @@ def save_img(filepath,pixels):
 
 
 def driver():
-    filepath = 'img/mountain.jpg'
+    filepath = 'img/bay.jpg'
     img = init_img(filepath)
     M,N,L = img_dimensions(img)
     intensity = gen_intensity(img,M,N,L)
@@ -69,6 +73,9 @@ def driver():
     s = gen_transform(L,p)
     trans_image(img,s)
     save_img(filepath,img)
+
+    hist_cv2_img = histogram_cv2(img)
+    save_img('img/histogram_cv2.jpg',hist_cv2_img)
 
 
 if __name__ == '__main__':

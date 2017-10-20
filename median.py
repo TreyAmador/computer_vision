@@ -2,7 +2,7 @@
 from PIL import Image
 import numpy as np
 from copy import deepcopy
-import sys
+import sys,cv2
 
 
 def init_img(filepath):
@@ -38,11 +38,18 @@ def apply_filter(img,dim):
     return fltrd
 
 
+def median_blur_cv2(img,size):
+    return cv2.medianBlur(img,size)
+
+
 def driver():
     size = 3
-    img = init_img('img/bay.jpg')
+    img = init_img('img/valve.png')
     fltrd = apply_filter(img,size)
-    save_img('img/bay_median.jpg',fltrd)
+    save_img('img/valve_median.png',fltrd)
+
+    img_cv2 = median_blur_cv2(img,size)
+    save_img('img/valve_median_cv2.jpg',img_cv2)
 
 
 if __name__ == '__main__':

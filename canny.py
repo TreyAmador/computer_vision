@@ -5,7 +5,6 @@ import time
 import math
 import sys
 import cv2
-from scipy.ndimage.filters import gaussian_filter
 
 
 def init_img(filepath):
@@ -68,6 +67,7 @@ def are_similar(a,b):
     return True
 
 
+# works well against opencv gaussian blur
 def gaussian_smooth(img,dim):
     off = int(dim/2)
     fltrd = new_pixels(img)
@@ -81,14 +81,11 @@ def gaussian_smooth(img,dim):
     return fltrd
 
 
-#def cv_gauss_smooth(img):
-#    return gaussian_filter(img,1)
-
-
 def gaussian_blur_cv2(img):
     return cv2.GaussianBlur(img,(3,3),0)
 
 
+# works properly against opencv2 sobel
 def sobel_filter(img):
     dx = new_gradient(img)
     dy = new_gradient(img)
@@ -112,6 +109,7 @@ def sobel_cv2(img):
         cv2.Sobel(img,cv2.CV_64F,0,1)
 
 
+# too faint
 def derivative_xy(img):
     dx = new_gradient(img)
     dy = new_gradient(img)
@@ -123,6 +121,8 @@ def derivative_xy(img):
     return dx,dy
 
 
+# works well
+# could be faster, perhaps use new gradient
 def gradient_magnitude(dx,dy):
     rho = new_pixels(dx)
     theta = new_gradient(dx)
@@ -186,11 +186,17 @@ def driver():
     smt = gaussian_blur_cv2(img)
     dx,dy = sobel_filter(smt)
     rho,theta = gradient_magnitude(dx,dy)
+
+    #sx,sy = sobel_cv2(smt)
+    #srho,stheta = gradient_magnitude(sx,sy)
+    #save_img('img/mag.png',rho)
+    #save_img('img/magcv2.png',srho)
+
     thin = non_max_suppress(rho,theta)
     edge = hysteresis(thin,theta,100,50)
     save_img('img/valve_final.png',edge)
-    cv2edge = canny_cv2(img,200,100)
-    save_img('img/valve_final_cv2.png',cv2edge)
+    #cv2edge = canny_cv2(img,200,100)
+    #save_img('img/valve_final_cv2.png',cv2edge)
 
 
 
