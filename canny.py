@@ -134,6 +134,7 @@ def non_max_suppress(rho,theta):
     return rho
 
 
+# TODO could optimize
 def hysteresis(rho,theta,high,low):
     edge = new_pixels(rho)
     for i in range(1,len(rho)-1):
@@ -176,8 +177,8 @@ def driver():
     save_img('img/valve_magnitude.png',rho)
     thin = non_max_suppress(rho,theta)
     save_img('img/valve_suppressed.png',thin)
-    #edge = hysteresis(thin,theta,20,10)
-    #save_img('img/valve_canny.png',edge)
+    edge = hysteresis(thin,theta,100,50)
+    save_img('img/valve_final.png',edge)
 
 
 
