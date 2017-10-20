@@ -6,6 +6,9 @@ from math import radians
 from math import degrees
 import time
 import sys
+import scipy
+from scipy.ndimage.filters import gaussian_filter
+
 
 
 def init_img(filepath):
@@ -34,35 +37,6 @@ def compass():
     return [(0,1),(1,1),(1,0),(1,-1),(0,-1),(-1,-1),(-1,0),(-1,1)]
 
 
-'''
-# hardcoded for now
-# returns (row,col) tuple
-def round_angle(rad):
-    deg = degrees(rad)
-    if -22.5 <= deg <= 22.5:
-        return radians(0.0),0,1
-    elif 22.5 < deg <= 67.5:
-        return radians(45.0),1,1
-    elif -67.5 <= deg < -22.5:
-        return radians(135.0),1,-1
-    elif 67.5 < deg <= 112.5:
-        return radians(90.0),1,0
-    elif -112.5 <= deg < -67.5:
-        return radians(90.0),1,0
-    elif 112.5 < deg <= 157.5:
-        return radians(135.0),1,-1
-    elif -157.5 <= deg < -112.5:
-        return radians(90.0),1,0
-    elif 157.5 < deg <= 180.0:
-        return radians(0.0),0,1
-    elif -180.0 <= deg < -157.5:
-        return radians(45.0),1,1
-    else:
-        return radians(0.0),0,1
-'''
-
-
-
 def round_angle(rad):
     deg = degrees(rad)
     if -22.5 <= deg <= 22.5:
@@ -87,7 +61,6 @@ def round_angle(rad):
         return 0,1
 
 
-# don't work....
 def are_similar(a,b):
     if len(a) != len(b) or len(a[0]) != len(b[0]):
         return False
@@ -111,21 +84,23 @@ def gaussian_smooth(img,dim):
     return fltrd
 
 
-# this works, but is not being using
+def cv_gauss_smooth(img):
+    return gaussian_filter(img,1)
+
+
 def sobel_filter(img):
     dx = new_gradient(img)
     dy = new_gradient(img)
     kx,ky = gen_kernels()
-    for i in range(len(img)-2):
-        for j in range(len(img[i])-2):
-            s = 0
-            t = 0
+    for i in range(1,len(img)-1):
+        for j in range(1,len(img[i])-1):
+            s,t = 0.0,0.0
             for m in range(len(kx)):
                 for n in range(len(kx[m])):
-                    s += dx[i+m][j+n] * kx[m][n]
-                    t += dy[i+m][j+n] * ky[m][n]
-            dx[i][j] = abs(s/9)
-            dy[i][j] = abs(t/9)
+                    s += img[i+m-1][j+n-1] * kx[m][n]
+                    t += img[i+m-1][j+n-1] * ky[m][n]
+            dx[i][j] = s
+            dy[i][j] = t
     return dx,dy
 
 
@@ -196,16 +171,13 @@ def driver():
     filepath = 'img/valve.png'
     img = init_img(filepath)
     smt = gaussian_smooth(img,3)
-    dx,dy = derivative_xy(smt)
-    rho,theta = gradient_magnitude(dx,dy)
+    sx,sy = sobel_filter(smt)
+    rho,theta = gradient_magnitude(sx,sy)
     save_img('img/valve_magnitude.png',rho)
     thin = non_max_suppress(rho,theta)
-
-
-
     save_img('img/valve_suppressed.png',thin)
-    edge = hysteresis(thin,theta,20,10)
-    save_img('img/valve_canny.png',edge)
+    #edge = hysteresis(thin,theta,20,10)
+    #save_img('img/valve_canny.png',edge)
 
 
 
