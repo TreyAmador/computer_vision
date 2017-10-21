@@ -87,16 +87,15 @@ def sobel_edge(img):
 def gradient_magnitude(dx,dy):
 	grad = np.power(np.power(dx,2.0)+np.power(dy,2.0),0.5)
 	theta = np.arctan2(dy,dx)
-	thetaQ = (np.round(theta * (5.0 / np.pi)) + 5) % 5
+	return grad,theta
+
+
+def non_max_suppress(grad,theta):
+	rho = grad.copy()
 	thetaXY = new_tuple(theta)
 	for i in range(len(theta)):
 		for j in range(len(theta[i])):
 			thetaXY[i][j] = round_angle(theta[i][j])
-	return grad,theta,thetaQ,thetaXY
-
-
-def non_max_suppress(im,grad,thetaQ,thetaXY):
-	rho = grad.copy()
 	for r in range(1,len(grad)-1):
 		for c in range(1,len(grad[r])-1):
 			i,j = thetaXY[r][c]
@@ -105,52 +104,50 @@ def non_max_suppress(im,grad,thetaQ,thetaXY):
 	return rho
 
 
-def canny_edge_detector(im,gradSup,theta,thetaQ, blur = 1, highThreshold = 91, lowThreshold = 31):
-	strongEdges = (gradSup > highThreshold)
-	thresholdedEdges = np.array(strongEdges, dtype=np.uint8) + (gradSup > lowThreshold)
-	finalEdges = strongEdges.copy()
-	currentPixels = []
-	for r in range(1, im.shape[0]-1):
-		for c in range(1, im.shape[1]-1):
-			if thresholdedEdges[r, c] != 1:
-				continue
-			localPatch = thresholdedEdges[r-1:r+2,c-1:c+2]
-			patchMax = localPatch.max()
-			if patchMax == 2:
-				currentPixels.append((r, c))
-				finalEdges[r, c] = 1
-	while len(currentPixels) > 0:
-		newPix = []
-		for r, c in currentPixels:
+def max_3x3_2d(mtx,r,c):
+	high = -1
+	for i in range(-1,2):
+		for j in range(-1,2):
+			if mtx[r+i][c+j] > high:
+				high = mtx[r+i][c+j]
+	return high
+
+
+def canny_edge_detector(gradient,high=91,low=31):
+	strong = (gradient > high)
+	edges = np.array(strong,dtype=np.uint8) * 255
+	threshold = np.array(strong, dtype=np.uint8) + (gradient > low)
+	pixels = []
+	for r in range(1, len(threshold)-1):
+		for c in range(1, len(threshold[r])-1):
+			if threshold[r][c] == 1:
+				patch_max = max_3x3_2d(threshold,r,c)
+				if patch_max == 2:
+					pixels.append((r, c))
+					edges[r][c] = 255
+	while len(pixels) > 0:
+		new_pixels = []
+		for r, c in pixels:
 			for dr in range(-1, 2):
 				for dc in range(-1, 2):
-					if dr == 0 and dc == 0: continue
-					r2 = r+dr
-					c2 = c+dc
-					if thresholdedEdges[r2, c2] == 1 and finalEdges[r2, c2] == 0:
-						newPix.append((r2, c2))
-						finalEdges[r2, c2] = 1
-		currentPixels = newPix
-	return finalEdges
-
-
-def convert_edges(edge):
-	rho = np.array(edge,dtype=np.uint8)
-	for i in range(len(rho)):
-		for j in range(len(rho[i])):
-			rho[i][j] *= 255
-	return rho
+					if dr == 0 and dc == 0:
+						continue
+					r2,c2 = r+dr,c+dc
+					if threshold[r2][c2] == 1 and edges[r2, c2] == 0:
+						new_pixels.append((r2, c2))
+						edges[r2][c2] = 255
+		pixels = new_pixels
+	return edges
 
 
 if __name__ == '__main__':
 	img = init_img('img/valve.png')
-	img2 = gaussian_blur(img)
-	dx,dy = sobel_edge(img2)
-	grad,theta,thetaQ,thetaXY = gradient_magnitude(dx,dy)
-	sup = non_max_suppress(img,grad,thetaQ,thetaXY)
-	edges = canny_edge_detector(img,sup,theta,thetaQ)
-	rho = convert_edges(edges)
-	save_img('img/valve_final.png',rho)
+	blur = gaussian_blur(img)
+	dx,dy = sobel_edge(blur)
+	grad,theta = gradient_magnitude(dx,dy)
+	sup = non_max_suppress(grad,theta)
+	edges = canny_edge_detector(sup)
+	save_img('img/valve_final.png',edges)
 
 
 
