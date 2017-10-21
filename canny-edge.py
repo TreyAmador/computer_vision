@@ -1,12 +1,7 @@
-from scipy.ndimage.filters import convolve, gaussian_filter
-from scipy.misc import imread, imshow
+from math import radians,degrees
+import time,math,sys,cv2
 from PIL import Image
 import numpy as np
-from math import radians,degrees
-import time
-import math
-import sys
-import cv2
 
 
 def init_img(filepath):
@@ -32,6 +27,7 @@ def new_pixels(img):
 
 def new_gradient(img):
     return np.zeros(shape=(len(img),len(img[0])))
+
 
 def new_tuple(img):
 	return np.zeros(shape=(len(img),len(img[0])),dtype='2int8')
@@ -127,15 +123,14 @@ def canny_edge_detector(gradient,high=91,low=31):
 					edges[r][c] = 255
 	while len(pixels) > 0:
 		new_pixels = []
-		for r, c in pixels:
-			for dr in range(-1, 2):
-				for dc in range(-1, 2):
-					if dr == 0 and dc == 0:
-						continue
-					r2,c2 = r+dr,c+dc
-					if threshold[r2][c2] == 1 and edges[r2, c2] == 0:
-						new_pixels.append((r2, c2))
-						edges[r2][c2] = 255
+		for r,c in pixels:
+			for s in range(-1, 2):
+				for d in range(-1, 2):
+					if s != 0 or d != 0:
+						r2,c2 = r+s,c+d
+						if threshold[r2][c2] == 1 and edges[r2][c2] == 0:
+							new_pixels.append((r2, c2))
+							edges[r2][c2] = 255
 		pixels = new_pixels
 	return edges
 
@@ -146,7 +141,7 @@ if __name__ == '__main__':
 	dx,dy = sobel_edge(blur)
 	grad,theta = gradient_magnitude(dx,dy)
 	sup = non_max_suppress(grad,theta)
-	edges = canny_edge_detector(sup)
+	edges = canny_edge_detector(sup,150,100)
 	save_img('img/valve_final.png',edges)
 
 

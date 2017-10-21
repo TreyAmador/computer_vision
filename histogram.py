@@ -66,6 +66,7 @@ def histogram_equalization(img):
     p = gen_proportions(M,N,intensity)
     s = gen_transform(L,p)
     trans_image(img,s)
+    return img
     save_img(filepath,img)
 
 
@@ -81,8 +82,9 @@ def histogram_equalization_opencv(img):
 def driver():
     filepath = 'img/bay.jpg'
     img = init_img(filepath)
-    histogram_equalization(filepath)
-    histogram_equalization_opencv(filepath)
+    hist = histogram_equalization(img)
+    save_img(filepath,hist)
+    #histogram_equalization_opencv(img)
 
 
 if __name__ == '__main__':
