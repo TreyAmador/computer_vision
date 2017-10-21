@@ -32,24 +32,20 @@ def gaussian_blur(img):
 	return cv2.GaussianBlur(gauss,(3,3),0)
 
 
-def CannyEdgeDetector(im, blur = 1, highThreshold = 91, lowThreshold = 31):
-	#im = np.array(im, dtype=float) #Convert to float to prevent clipping values
-
-	#Gaussian blur to reduce noise
-	#im2 = gaussian_filter(im, blur)
-
-	im2 = gaussian_blur(im)
-
-	#Use sobel filters to get horizontal and vertical gradients
+def sobel_edge(im2):
 	im3h = convolve(im2,[[-1,0,1],[-2,0,2],[-1,0,1]])
 	im3v = convolve(im2,[[1,2,1],[0,0,0],[-1,-2,-1]])
+	return im3h,im3v
 
-	#Get gradient and direction
+
+def gradient_magnitude(im3h,im3v):
 	grad = np.power(np.power(im3h, 2.0) + np.power(im3v, 2.0), 0.5)
 	theta = np.arctan2(im3v, im3h)
 	thetaQ = (np.round(theta * (5.0 / np.pi)) + 5) % 5 #Quantize direction
+	return grad,theta,thetaQ
 
-	#Non-maximum suppression
+
+def non_max_suppress(im,grad):
 	gradSup = grad.copy()
 	for r in range(im.shape[0]):
 		for c in range(im.shape[1]):
@@ -71,6 +67,10 @@ def CannyEdgeDetector(im, blur = 1, highThreshold = 91, lowThreshold = 31):
 			if tq == 3: #3 is NW-SE
 				if grad[r, c] <= grad[r-1, c-1] or grad[r, c] <= grad[r+1, c+1]:
 					gradSup[r, c] = 0
+	return gradSup
+
+
+def canny_edge_detector(im,gradSup,theta,thetaQ, blur = 1, highThreshold = 91, lowThreshold = 31):
 
 	#Double threshold
 	strongEdges = (gradSup > highThreshold)
@@ -119,17 +119,22 @@ def convert_edges(edge):
 	for i in range(len(rho)):
 		for j in range(len(rho[i])):
 			rho[i][j] *= 255
-	print(rho)
 	return rho
 
 
 
 if __name__ == '__main__':
 	img = init_img('img/valve.png')
-	#img = gaussian_blur(img)
-	finalEdges = CannyEdgeDetector(img)
-	rho = convert_edges(finalEdges)
+	img2 = gaussian_blur(img)
+	dx,dy = sobel_edge(img2)
+	grad,theta,thetaQ = gradient_magnitude(dx,dy)
+	sup = non_max_suppress(img,grad)
+	edges = canny_edge_detector(img,sup,theta,thetaQ)
+	rho = convert_edges(edges)
 	save_img('img/valve_final.png',rho)
+
+
+
 
 
 
