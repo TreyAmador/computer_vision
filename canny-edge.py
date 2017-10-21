@@ -1,4 +1,3 @@
-import numpy as np
 from scipy.ndimage.filters import convolve, gaussian_filter
 from scipy.misc import imread, imshow
 from PIL import Image
@@ -27,15 +26,39 @@ def save_img(filepath,pixels):
     img.save(filepath)
 
 
+def new_pixels(img):
+    return np.zeros(shape=(len(img),len(img[0])),dtype=np.uint8)
+
+
+def new_gradient(img):
+    return np.zeros(shape=(len(img),len(img[0])))
+
+
+def gen_kernels():
+	kx = [[-1,0,1],[-2,0,2],[-1,0,1]]
+	ky = [[1,2,1],[0,0,0],[-1,-2,-1]]
+	return kx,ky
+
+
 def gaussian_blur(img):
 	gauss = np.array(img,dtype=np.float)
 	return cv2.GaussianBlur(gauss,(3,3),0)
 
 
-def sobel_edge(im2):
-	im3h = convolve(im2,[[-1,0,1],[-2,0,2],[-1,0,1]])
-	im3v = convolve(im2,[[1,2,1],[0,0,0],[-1,-2,-1]])
-	return im3h,im3v
+def sobel_edge(img):
+	dx = new_gradient(img)
+	dy = new_gradient(img)
+	kx,ky = gen_kernels()
+	for i in range(1,len(img)-1):
+		for j in range(1,len(img[i])-1):
+			s,t = 0.0,0.0
+			for m in range(len(kx)):
+				for n in range(len(kx[m])):
+					s += img[i+m-1][j+n-1] * kx[m][n]
+					t += img[i+m-1][j+n-1] * ky[m][n]
+			dx[i][j] = s
+			dy[i][j] = t
+	return dx,dy
 
 
 def gradient_magnitude(im3h,im3v):
