@@ -1,5 +1,5 @@
 from math import radians,degrees
-import time,math,sys,cv2
+import sys,cv2,time,math
 from PIL import Image
 import numpy as np
 
@@ -136,13 +136,13 @@ def canny_edge_detector(gradient,high=91,low=31):
 
 
 if __name__ == '__main__':
-	img = init_img('img/valve.png')
-	blur = gaussian_blur(img)
-	dx,dy = sobel_edge(blur)
-	grad,theta = gradient_magnitude(dx,dy)
-	sup = non_max_suppress(grad,theta)
-	edges = canny_edge_detector(sup,150,100)
-	save_img('img/valve_final.png',edges)
+    img = init_img('img/valve.png')
+    blur = gaussian_blur(img)
+    dx,dy = sobel_edge(blur)
+    grad,theta = gradient_magnitude(dx,dy)
+    sup = non_max_suppress(grad,theta)
+    edges = canny_edge_detector(sup,150,100)
+    save_img('img/valve_final.png',edges)
 
 
 
