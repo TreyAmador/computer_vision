@@ -1,7 +1,9 @@
 from math import radians,degrees
-import sys,cv2,time,math
+from scipy.ndimage.filters import gaussian_filter
+import sys,time,math
 from PIL import Image
 import numpy as np
+import cv2
 
 
 def init_img(filepath):
@@ -64,20 +66,20 @@ def round_angle(rad):
 
 
 def gaussian_blur(img):
-	return cv2.GaussianBlur(img,(3,3),0)
+    return gaussian_filter(img,1)
 
 
 def sobel_edge(img):
-	dx = new_gradient(img)
-	dy = new_gradient(img)
-	kx,ky = init_kernels()
-	for i in range(1,len(img)-1):
-		for j in range(1,len(img[i])-1):
-			for m in range(len(kx)):
-				for n in range(len(kx[m])):
-					dx[i][j] += img[i+m-1][j+n-1] * kx[m][n]
-					dy[i][j] += img[i+m-1][j+n-1] * ky[m][n]
-	return dx,dy
+    dx = new_gradient(img)
+    dy = new_gradient(img)
+    kx,ky = init_kernels()
+    for i in range(1,len(img)-1):
+        for j in range(1,len(img[i])-1):
+            for m in range(len(kx)):
+                for n in range(len(kx[m])):
+                    dx[i][j] += img[i+m-1][j+n-1] * kx[m][n]
+                    dy[i][j] += img[i+m-1][j+n-1] * ky[m][n]
+    return dx,dy
 
 
 def gradient_magnitude(dx,dy):
@@ -109,7 +111,7 @@ def max_3x3_2d(mtx,r,c):
 	return high
 
 
-def canny_edge_detector(gradient,high=91,low=31):
+def canny_edge_detector(gradient,high=200,low=50):
 	strong = (gradient > high)
 	edges = np.array(strong,dtype=np.uint8) * 255
 	threshold = np.array(strong, dtype=np.uint8) + (gradient > low)
@@ -141,7 +143,7 @@ if __name__ == '__main__':
     dx,dy = sobel_edge(blur)
     grad,theta = gradient_magnitude(dx,dy)
     sup = non_max_suppress(grad,theta)
-    edges = canny_edge_detector(sup,150,100)
+    edges = canny_edge_detector(sup)
     save_img('img/valve_final.png',edges)
 
 
