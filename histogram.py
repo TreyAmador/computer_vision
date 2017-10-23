@@ -43,6 +43,8 @@ def user_input():
             sys.exit(1)
     # condition if user does not input args
     else:
+        # message for user if imporper number args
+        print('Using default image')
         # returns default file if none found
         return 'img/bay','.jpg'
 
