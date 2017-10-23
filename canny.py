@@ -9,9 +9,8 @@ import cv2
 def init_img(filepath):
     if len(sys.argv) > 1:
         filepath = sys.argv[1]
-    img = np.asarray(Image.open(filepath).convert('L'))
-    pixels = np.array(img)
-    return pixels
+    img = np.array(Image.open(filepath).convert('L'))
+    return img
 
 
 def save_img(filepath,pixels):
