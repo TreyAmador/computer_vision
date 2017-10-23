@@ -167,90 +167,253 @@ def round_angle(rad):
 def gaussian_blur(img):
     '''
         opencv gaussian blur
+        step 1/5
     '''
+    # default size of gaussian blur
     size = 3
+    # returns the gaussian blur image
     return cv2.GaussianBlur(img,(size,size),0)
 
 
+# not used in final program
+def gaussian_smooth(img,dim):
+    '''
+        a homemade gaussian blur function
+        the opencv function is used
+        instead of this version
+    '''
+    # calculate offset of filter
+    off = int(dim/2)
+    # create new image to be filtered
+    fltrd = new_pixels(img)
+    # iterate through rows of image
+    for i in range(off,len(img)-off):
+        # iterate through columns in each row
+        for j in range(off,len(img[i])-off):
+            # a sum var for the filter
+            fltr_sum = 0
+            # iterate through the filter rows
+            for s in range(i-off,i+off+1):
+                # iterate through the filter columns per row
+                for t in range(j-off,j+off+1):
+                    # sum the elements at the filter
+                    fltr_sum += img[s][t]
+            # average filter sum, place at center of filter
+            fltrd[i][j] = fltr_sum/(dim*dim)
+    # return the filtered image
+    return fltrd
+
+
 def sobel_edge(img):
+    '''
+        Sobel edge filter
+        creates x and y derivative
+        for image and returns them
+    '''
+    # generate empty gradient for x direction
     dx = new_gradient(img)
+    # generate empty gradient for y direction
     dy = new_gradient(img)
+    # returns the gradients
     kx,ky = init_kernels()
+    # iterates through each row of numpy image
     for i in range(1,len(img)-1):
+        # iterates through each column of numpy row
         for j in range(1,len(img[i])-1):
+            # indexes the rows of the kernels
             for m in range(len(kx)):
+                # indexes the cols of the kernels
                 for n in range(len(kx[m])):
+                    # calculate sum of kernel and place
+                    # in center of derivative x image
                     dx[i][j] += img[i+m-1][j+n-1] * kx[m][n]
+                    # calculate sum of kernel and place
+                    # in center of derivative x image
                     dy[i][j] += img[i+m-1][j+n-1] * ky[m][n]
+    # returns the derivatives of the images
     return dx,dy
 
 
 def gradient_magnitude(dx,dy):
-	grad = np.power(np.power(dx,2.0)+np.power(dy,2.0),0.5)
-	theta = np.arctan2(dy,dx)
-	return grad,theta
+    '''
+        calculate the magnitude and angle
+        of the dx and dy images
+    '''
+    # caclulate gradient by raising each element
+    # to power of two, adding, and square rooting
+    rho = np.power(np.power(dx,2.0)+np.power(dy,2.0),0.5)
+    # calculate arctan of the dy and dx for each element
+    theta = np.arctan2(dy,dx)
+    # return gradient and angle of derivatives
+    return rho,theta
 
 
 def non_max_suppress(grad,theta):
-	rho = grad.copy()
-	thetaXY = new_tuple(theta)
-	for i in range(len(theta)):
-		for j in range(len(theta[i])):
-			thetaXY[i][j] = round_angle(theta[i][j])
-	for r in range(1,len(grad)-1):
-		for c in range(1,len(grad[r])-1):
-			i,j = thetaXY[r][c]
-			if grad[r][c] <= grad[r+i][c-j] or grad[r][c] <= grad[r-i][c+j]:
-				rho[r][c] = 0
-	return rho
+    '''
+        supress extra line thickness
+    '''
+    # copy gradient
+    rho = grad.copy()
+    # create matrix for rounded angle coordinates
+    thetaXY = new_tuple(theta)
+    # iterate though rows of angle matrix
+    for i in range(len(theta)):
+        # iterate through cols of each row of angle matrix
+        for j in range(len(theta[i])):
+            # round angle then return adjacent 
+            # coordinates based on that angle
+            thetaXY[i][j] = round_angle(theta[i][j])
+    # iterate through rows gradient
+    for r in range(1,len(grad)-1):
+        # iterate through columns of rows of gradient
+        for c in range(1,len(grad[r])-1):
+            # return the coordinates of the angle
+            i,j = thetaXY[r][c]
+            # suppress pixel at i,j indeces if not greater than
+            # adjacent pixels based on returned indeces
+            if grad[r][c] <= grad[r+i][c-j] or grad[r][c] <= grad[r-i][c+j]:
+                # suppress pixel at index if condition true
+                rho[r][c] = 0
+    # return suppressed magnitude gradient
+    return rho
 
 
 def max_3x3_2d(mtx,r,c):
-	high = -1
-	for i in range(-1,2):
-		for j in range(-1,2):
-			if mtx[r+i][c+j] > high:
-				high = mtx[r+i][c+j]
-	return high
+    '''
+        finds largest value in a 3x3 matrix
+        of pixel values
+    '''
+    # sentinel value for current high
+    high = -1
+    # iterate through 3x3 patch of image
+    # iterate through 3 rows
+    for i in range(-1,2):
+        # iterate through 3 columns of row
+        for j in range(-1,2):
+            # determines value is higher than current max
+            if mtx[r+i][c+j] > high:
+                # if condition is true, set highest to new highest
+                high = mtx[r+i][c+j]
+    # return highest value found in 3x3 matrix
+    return high
 
 
-def canny_edge_detector(gradient,high=200,low=50):
-	strong = (gradient > high)
-	edges = np.array(strong,dtype=np.uint8) * 255
-	threshold = np.array(strong, dtype=np.uint8) + (gradient > low)
-	pixels = []
-	for r in range(1, len(threshold)-1):
-		for c in range(1, len(threshold[r])-1):
-			if threshold[r][c] == 1:
-				patch_max = max_3x3_2d(threshold,r,c)
-				if patch_max == 2:
-					pixels.append((r, c))
-					edges[r][c] = 255
-	while len(pixels) > 0:
-		new_pixels = []
-		for r,c in pixels:
-			for s in range(-1, 2):
-				for d in range(-1, 2):
-					if s != 0 or d != 0:
-						r2,c2 = r+s,c+d
-						if threshold[r2][c2] == 1 and edges[r2][c2] == 0:
-							new_pixels.append((r2, c2))
-							edges[r2][c2] = 255
-		pixels = new_pixels
-	return edges
+def hysteresis(gradient,high=200,low=100):
+    '''
+        
+    '''
+    # creates matrix of values where 0 is 
+    # below threshold and 1 is above threshold
+    strong = (gradient > high)
+    # creates edge 2d matrix where strong pixels are 255
+    edges = np.array(strong,dtype=np.uint8) * 255
+    # creates matrix where strong = 2, midrange = 1, weak = 0
+    threshold = np.array(strong, dtype=np.uint8) + (gradient > low)
+    # init list of strong pixels
+    pixels = []
+    # iterate through rows of threshold matrix
+    for r in range(1, len(threshold)-1):
+        # iterate through columns of each row of threshold matrix
+        for c in range(1, len(threshold[r])-1):
+            # tests if threshold pixel is midrange
+            if threshold[r][c] == 1:
+                # determine max of 3x3 matrix around r,c
+                patch_max = max_3x3_2d(threshold,r,c)
+                # determine if there is adjacent maximum matrix
+                # and set current pixel to max value
+                if patch_max == 2:
+                    # add adjacent vals to pixel list
+                    pixels.append((r, c))
+                    # set edge to maximum value
+                    edges[r][c] = 255
+    # loop through strong pixels until there are none left
+    while len(pixels) > 0:
+        # create list of new pixels
+        new_pixels = []
+        # iterate through pixels
+        for r,c in pixels:
+            # query 8-adjacent pixels
+            # test pixels above and below
+            for s in range(-1, 2):
+                # test pixels left and right
+                for d in range(-1, 2):
+                    # skip this if at r and c
+                    # or center of 3x3 matrix
+                    if s != 0 or d != 0:
+                        # index for selected pixels
+                        # offset with adjacent pixels
+                        r2,c2 = r+s,c+d
+                        # if midrange threshold and final matrix not white
+                        if threshold[r2][c2] == 1 and edges[r2][c2] == 0:
+                            # add this pixel of interest to list which 
+                            # will allow checking adjacent pixels
+                            new_pixels.append((r2, c2))
+                            # make adjacent pixel strong/visible
+                            edges[r2][c2] = 255
+        
+        # replace previous list of pixels with new list
+        # to iterate adjacent pixels
+        pixels = new_pixels
+    # return the edges numpy array
+    return edges
+
+
+def canny_edge_detector(img,high,low):
+    '''
+        calls 5 functions to complete 
+        canny edge detection
+    '''
+    # blur image with gauss filter
+    blur = gaussian_blur(img)
+    # calculate x and y derivatives with sobel filter
+    dx,dy = sobel_edge(blur)
+    # calculate gradient and angle matrices
+    rho,theta = gradient_magnitude(dx,dy)
+    # suppresses non-strongest pixels in region
+    sup = non_max_suppress(rho,theta)
+    # determine which midrange edges 
+    # are adjacent to strong pixels 
+    edges = hysteresis(sup,high,low)
+    # return edge matrix
+    return edges
+
+
+
+def canny_opencv(img,high,low):
+    '''
+        function calls
+        opencv canny edge detection
+    '''
+    # return opencv canny edge detection matrix
+    return cv2.Canny(img,low,high)
+
+
+def driver():
+    '''
+        program driver
+        calling algorithm function
+        and saving final images
+    '''
+    # user input returning filepath and threshold values
+    name,ext,high,low = user_input()
+    # create new image to be analyzed
+    img = init_img(name+ext)
+    # homemade canny edge detection algorithm with given thresholds
+    canny_edge = canny_edge_detector(img,high,low)
+    # opencv canny edge detection with same thresholds
+    canny_edge_cv = canny_opencv(img,high,low)
+    # saves the homemade canny filtered image
+    save_img(name+ext,canny_edge)
+    # saves the opencv canny filtered image
+    save_img(name+'_cv'+ext,canny_edge_cv)
 
 
 if __name__ == '__main__':
-    name,ext,high,low = user_input()
-    img = init_img(name+ext)
-    blur = gaussian_blur(img)
-    dx,dy = sobel_edge(blur)
-    grad,theta = gradient_magnitude(dx,dy)
-    sup = non_max_suppress(grad,theta)
-    edges = canny_edge_detector(sup,high,low)
-    save_img('img/valve_final.png',edges)
-
-
+    '''
+        entry point of progam
+    '''
+    # calls program driver
+    driver()
 
 
 # canny edge detection
