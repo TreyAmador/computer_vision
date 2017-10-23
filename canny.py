@@ -1,71 +1,175 @@
+# canny edge detector for images
+
+# import degrees and radian conversion functions
 from math import radians,degrees
-from scipy.ndimage.filters import gaussian_filter
-import sys,time,math
+# import pathlib to test if file exists
+from pathlib import Path
+# import PIL for image import and export
 from PIL import Image
+# numpy for efficient array use
 import numpy as np
+# import system for user interfacing
+import sys
+# import opencv functionality
 import cv2
 
 
-def init_img(filepath):
-    if len(sys.argv) > 1:
+def user_input():
+    '''
+        accepts user input for canny edge filter
+        including file names and min and max threshold
+    '''
+    # test if the proper number of inputs from user
+    if (len(sys.argv)) > 3:
+        # get file in directory
         filepath = sys.argv[1]
-    img = np.array(Image.open(filepath).convert('L'))
-    return img
+        # get val of min threshold
+        min_val_str = sys.argv[2]
+        # get val of max threshold
+        max_val_str = sys.argv[3]
+        # get file in directory
+        img = Path(filepath)
+        # determines if file exists in directory
+        if img.is_file():
+            # splits filepath by period
+            t = filepath.split('.')
+            # generates filename and extension
+            name,ext = '.'.join(t[:-1]),'.'+t[-1]
+            # try expression to transform integer
+            try:
+                # transform min threshold from string to int
+                min_val = int(min_val_str)
+                # transform max threshold from string to int
+                max_val = int(max_val_str)
+            # if cannot be converted, raises ValueError
+            except ValueError:
+                # output message for imporper size input
+                print('Second and third args must be integers')
+                # exit program if improper input
+                sys.exit(1)
+            # condition if try worked successfully
+            else:
+                # testing if imporper min threshold
+                if min_val < 0:
+                    # assign default minimum value
+                    min_val = 0
+                # testing if imporper max threshold
+                if max_val > 255:
+                    # assign default max max val
+                    max_val = 255
+                # return filename and thresholds
+                return name,ext,max_val,min_val
+        # condition if file not found
+        else:
+            # tell user file not found
+            print('File',filepath,'not found')
+            # exit program gracefully if no file
+            sys.exit(1)
+    # condition if no user args
+    else:
+        # print to user that default image being used
+        print('Using default image and threshold values')
+        # return default image filepath and thresholds
+        return 'img/valve','.png',200,100
+
+
+def init_img(filepath):
+    '''
+        initializes image
+    '''
+    # creates image from PIL module as np array
+    # and converts it to black and white image
+    return np.array(Image.open(filepath).convert('L'))
 
 
 def save_img(filepath,pixels):
-    if len(sys.argv) > 1:
-        filepath = sys.argv[1]
+    '''
+        outputs the image to same dir as input
+        with additional info in file name
+    '''
+    # splits the image by period
     t = filepath.split('.')
+    # appends file to contain algorithm of transformation
     filepath = '.'.join(t[:-1])+'_canny.'+t[-1]
+    # creates PIL image from numpy array
     img = Image.fromarray(pixels)
+    # function to save image to directory
     img.save(filepath)
 
 
 def new_pixels(img):
+    '''
+        generate new integer numpy array 
+        of specified image dimensions
+    '''
+    # return new int numpy array with all zeros
     return np.zeros(shape=(len(img),len(img[0])),dtype=np.uint8)
 
 
 def new_gradient(img):
+    '''
+        generate new float numpy array 
+        of specified image dimensions
+    '''
+    # return new empty float numpy array
     return np.zeros(shape=(len(img),len(img[0])))
 
 
 def new_tuple(img):
-	return np.zeros(shape=(len(img),len(img[0])),dtype='2int8')
+    '''
+        generate new integer pair numpy array 
+        of specified image dimensions
+    '''
+    # return new empty numpy array with pairs of integers
+    return np.zeros(shape=(len(img),len(img[0])),dtype='2int8')
 
 
 def init_kernels():
-	kx = [[-1,0,1],[-2,0,2],[-1,0,1]]
-	ky = [[1,2,1],[0,0,0],[-1,-2,-1]]
-	return kx,ky
+    '''
+        return predefined Sobel kernels
+    '''
+    # generages the x-direction Sobel kernel
+    kx = [[-1,0,1],[-2,0,2],[-1,0,1]]
+    # generates the y-direction Sobel kernel
+    ky = [[1,2,1],[0,0,0],[-1,-2,-1]]
+    # returns the x and y kernel
+    return kx,ky
 
 
 def round_angle(rad):
+    '''
+        rounds the angle to 45 degree sectors
+    '''
+    # convert radians to degrees for easier use
     deg = degrees(rad)
-    if -22.5 <= deg <= 22.5:
-        return 0,1
-    elif 22.5 < deg <= 67.5:
-        return 1,1
-    elif -67.5 <= deg < -22.5:
-        return 1,-1
-    elif 67.5 < deg <= 112.5:
-        return 1,0
-    elif -112.5 <= deg < -67.5:
-        return 1,0
-    elif 112.5 < deg <= 157.5:
-        return 1,-1
-    elif -157.5 <= deg < -112.5:
-        return 1,0
-    elif 157.5 < deg <= 180.0:
-        return 0,1
-    elif -180.0 <= deg < -157.5:
-        return 1,1
-    else:
-        return 0,1
+    # returns indeces for angle between conditional degrees
+    if -22.5 <= deg <= 22.5: return 0,1
+    # returns indeces for angle between conditional degrees
+    elif 22.5 < deg <= 67.5: return 1,1
+    # returns indeces for angle between conditional degrees
+    elif -67.5 <= deg < -22.5: return 1,-1
+    # returns indeces for angle between conditional degrees
+    elif 67.5 < deg <= 112.5: return 1,0
+    # returns indeces for angle between conditional degrees
+    elif -112.5 <= deg < -67.5: return 1,0
+    # returns indeces for angle between conditional degrees
+    elif 112.5 < deg <= 157.5: return 1,-1
+    # returns indeces for angle between conditional degrees
+    elif -157.5 <= deg < -112.5: return 1,0
+    # returns indeces for angle between conditional degrees
+    elif 157.5 < deg <= 180.0: return 0,1
+    # returns indeces for angle between conditional degrees
+    elif -180.0 <= deg < -157.5: return 1,1
+    # returns a default index value
+    else: return 0,1
 
 
 def gaussian_blur(img):
-    return gaussian_filter(img,1)
+    '''
+        opencv gaussian blur
+    '''
+    size = 3
+    return cv2.GaussianBlur(img,(size,size),0)
 
 
 def sobel_edge(img):
@@ -137,12 +241,13 @@ def canny_edge_detector(gradient,high=200,low=50):
 
 
 if __name__ == '__main__':
-    img = init_img('img/valve.png')
+    name,ext,high,low = user_input()
+    img = init_img(name+ext)
     blur = gaussian_blur(img)
     dx,dy = sobel_edge(blur)
     grad,theta = gradient_magnitude(dx,dy)
     sup = non_max_suppress(grad,theta)
-    edges = canny_edge_detector(sup)
+    edges = canny_edge_detector(sup,high,low)
     save_img('img/valve_final.png',edges)
 
 
