@@ -12,6 +12,22 @@ def rho_theta(x1,y1,x2,y2):
     return rho,theta
 
 
+def query_line(line):
+    return line['x1'],line['y1'],line['x2'],line['y2']
+
+
+def intersection(line_a,line_b):
+    x1,y1,x2,y2 = query_line(line_a)
+    x3,y3,x4,y4 = query_line(line_b)
+    pn = (x1-x2)*(y3-y4)-(y1-y2)*(x3-x4)
+    if pn == 0:
+        return -1,-1
+    px = (x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4)
+    py = (x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4)
+    return px/pn,py/pn
+
+
+
 
 def detect_hough_lines():
 
@@ -47,6 +63,31 @@ def detect_hough_lines():
             y2 = int(y0 - w*(a))
             hough_lines.append({'x1':x1,'y1':y1,'x2':x2,'y2':y2})
 
+    # prune lines
+    prune_lines = []
+    intersect = []
+    for i in range(len(hough_lines)-1):
+        for j in range(i+1,len(hough_lines)):
+            x1,y1,x2,y2 = query_line(hough_lines[i])
+            x3,y3,x4,y4 = query_line(hough_lines[j])
+            angle = abs(math.atan2(y2-y1,x2-x1)-math.atan2(y4-y3,x4-x3))
+            angle = angle*180/np.pi
+            if angle < 1.0 and hough_lines[j] not in prune_lines:
+                prune_lines.append(j)
+
+    for i in prune_lines:
+        del hough_lines[i]
+
+    # px,py = intersection(hough_lines[i],hough_lines[j])
+        for i in range(len(hough_lines)-1):
+            for j in range(i+1,len(hough_lines)):
+                px,py = intersection(hough_lines[i],hough_lines[j])
+                
+
+
+
+
+
     for line in hough_lines:
         cv2.line(img,(line['x1'],line['y1']),(line['x2'],line['y2']),(0,255,0),3)
 
@@ -77,4 +118,5 @@ def detect_hough_circles():
         cv2.destroyAllWindows()
 
 
-detect_hough_circles()
+detect_hough_lines()
+#detect_hough_circles()
