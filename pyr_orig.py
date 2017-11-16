@@ -1,10 +1,6 @@
 # image blending
 # this works!
 
-
-
-'''
-
 import sys
 import os
 import numpy as np
@@ -13,7 +9,7 @@ import scipy
 from scipy.stats import norm
 from scipy.signal import convolve2d
 import math
-
+'''split rgb image to its channels'''
 def split_rgb(image):
   red = None
   green = None
@@ -21,10 +17,12 @@ def split_rgb(image):
   (blue, green, red) = cv2.split(image)
   return red, green, blue
 
+'''generate a 5x5 kernel'''
 def generating_kernel(a):
   w_1d = np.array([0.25 - a/2.0, 0.25, a, 0.25, 0.25 - a/2.0])
   return np.outer(w_1d, w_1d)
 
+'''reduce image by 1/2'''
 def ireduce(image):
   out = None
   kernel = generating_kernel(0.4)
@@ -32,6 +30,7 @@ def ireduce(image):
   out = outimage[::2,::2]
   return out
 
+'''expand image by factor of 2'''
 def iexpand(image):
   out = None
   kernel = generating_kernel(0.4)
@@ -40,6 +39,7 @@ def iexpand(image):
   out = 4*scipy.signal.convolve2d(outimage,kernel,'same')
   return out
 
+'''create a gaussain pyramid of a given image'''
 def gauss_pyramid(image, levels):
   output = []
   output.append(image)
@@ -49,6 +49,7 @@ def gauss_pyramid(image, levels):
     output.append(tmp)
   return output
 
+'''build a laplacian pyramid'''
 def lapl_pyramid(gauss_pyr):
   output = []
   k = len(gauss_pyr)
@@ -62,7 +63,7 @@ def lapl_pyramid(gauss_pyr):
     output.append(gu - egu)
   output.append(gauss_pyr.pop())
   return output
-
+'''Blend the two laplacian pyramids by weighting them according to the mask.'''
 def blend(lapl_pyr_white, lapl_pyr_black, gauss_pyr_mask):
   blended_pyr = []
   k= len(gauss_pyr_mask)
@@ -71,7 +72,7 @@ def blend(lapl_pyr_white, lapl_pyr_black, gauss_pyr_mask):
    p2=(1 - gauss_pyr_mask[i])*lapl_pyr_black[i]
    blended_pyr.append(p1 + p2)
   return blended_pyr
-
+'''Reconstruct the image based on its laplacian pyramid.'''
 def collapse(lapl_pyr):
   output = None
   output = np.zeros((lapl_pyr[0].shape[0],lapl_pyr[0].shape[1]), dtype=np.float64)
@@ -144,9 +145,6 @@ def main():
  lapl_pyr_image2g = lapl_pyramid(gauss_pyr_image2g)
  lapl_pyr_image2b = lapl_pyramid(gauss_pyr_image2b)
 
- print([x.shape for x in lapl_pyr_image2r])
- print([x.shape for x in gauss_pyr_maskr])
-
  outpyrr = blend(lapl_pyr_image2r, lapl_pyr_image1r, gauss_pyr_maskr)
  outpyrg = blend(lapl_pyr_image2g, lapl_pyr_image1g, gauss_pyr_maskg)
  outpyrb = blend(lapl_pyr_image2b, lapl_pyr_image1b, gauss_pyr_maskb)
@@ -177,102 +175,6 @@ def main():
 
 if  __name__ =='__main__':
  main()
-
-
-'''
-
-
-
-
-
-
-
-import cv2
-import numpy as np,sys
-
-
-def init_img(filepath):
-    return cv2.imread(filepath)
-
-
-def gen_gaussian(orig):
-    img = orig.copy()
-    pyramid = [img]
-    for i in range(6):
-        img = cv2.pyrDown(img)
-        pyramid.append(img)
-    return pyramid
-
-
-def gen_laplacian(gauss):
-    pyramid = [gauss[5]]
-    for i in range(5,0,-1):
-        size = (gauss[i-1].shape[1],gauss[i-1].shape[0])
-        GE = cv2.pyrUp(gauss[i],dstsize=size)
-        laplace = cv2.subtract(gauss[i-1],GE)
-        pyramid.append(laplace)
-    return pyramid
-
-
-def blend(laplace_a,laplace_b):
-    # add mask here?
-    laplace_sum = []
-    for l_a,l_b in zip(laplace_a,laplace_b):
-        rows,cols,dpt = l_a.shape
-        l_s = np.hstack((l_a[:,0:int(cols/2)], l_b[:,int(cols/2):]))
-        laplace_sum.append(l_s)
-
-    laplace_pyramid = laplace_sum[0]
-    for i in range(1,6):
-        size = (laplace_sum[i].shape[1],laplace_sum[i].shape[0])
-        laplace_pyramid = cv2.pyrUp(laplace_pyramid,dstsize=size)
-        laplace_pyramid = cv2.add(laplace_pyramid,laplace_sum[i])
-    return laplace_pyramid
-
-
-
-def blend_mask(laplace_a,laplace_b,gauss_mask):
-    # add mask here
-    laplace_sum = []
-    for l_a,l_b in zip(laplace_a,laplace_b):
-        rows,cols,dpt = l_a.shape
-        l_s = np.hstack((l_a[:,0:int(cols/2)], l_b[:,int(cols/2):]))
-        laplace_sum.append(l_s)
-
-
-    laplace_pyramid = laplace_sum[0]
-    for i in range(1,6):
-        size = (laplace_sum[i].shape[1],laplace_sum[i].shape[0])
-        laplace_pyramid = cv2.pyrUp(laplace_pyramid,dstsize=size)
-        laplace_pyramid = cv2.add(laplace_pyramid,laplace_sum[i])
-    return laplace_pyramid
-
-
-def driver():
-    img_a = init_img('img/apple.jpg')
-    img_b = init_img('img/orange.jpg')
-    img_mask = init_img('img/mask512.jpg')
-    gauss_a = gen_gaussian(img_a)
-    gauss_b = gen_gaussian(img_b)
-    gauss_mask = gen_gaussian(img_mask)
-    gauss_mask = gauss_mask[-2::-1]
-    laplace_a = gen_laplacian(gauss_a)
-    laplace_b = gen_laplacian(gauss_b)
-
-    #print([x.shape for x in gauss_a])
-    #print([x.shape for x in laplace_a])
-    #print([x.shape for x in gauss_mask])
-
-    blended_img = blend_mask(laplace_a,laplace_b,gauss_mask)
-    cv2.imwrite('img/apple_orange_blended.jpg',blended_img)
-
-
-if __name__ == '__main__':
-    driver()
-
-
-
-
 
 
 
