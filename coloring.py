@@ -2,7 +2,10 @@ import cv2
 import numpy as np
 from PIL import Image
 import math
-from scipy.ndimage.morphology import binary_fill_holes
+#from scipy.ndimage.morphology import binary_fill_holes
+#import sys.float_info.epsilon as espilon
+import sys
+#from sys.float_info import epsilon
 
 
 def rho_theta(x1,y1,x2,y2):
@@ -26,6 +29,9 @@ def intersection(line_a,line_b):
     py = (x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4)
     return px/pn,py/pn
 
+
+def slope(x1,y1,x2,y2):
+    return (y2-y1)/(x2-x1)
 
 
 
@@ -61,35 +67,84 @@ def detect_hough_lines():
             y1 = int(y0 + w*(a))
             x2 = int(x0 - w*(-b))
             y2 = int(y0 - w*(a))
-            hough_lines.append({'x1':x1,'y1':y1,'x2':x2,'y2':y2})
+            hough_lines.append({
+                'x1':x1,'y1':y1,'x2':x2,'y2':y2,
+                's':slope(x1,y1,x2,y2),
+                'theta':math.atan2(y2-y1,x2-x1)
+            })
 
     # prune lines
     prune_lines = []
-    intersect = []
     for i in range(len(hough_lines)-1):
         for j in range(i+1,len(hough_lines)):
-            x1,y1,x2,y2 = query_line(hough_lines[i])
-            x3,y3,x4,y4 = query_line(hough_lines[j])
-            angle = abs(math.atan2(y2-y1,x2-x1)-math.atan2(y4-y3,x4-x3))
+            angle = abs(hough_lines[i]['theta']-hough_lines[j]['theta'])
             angle = angle*180/np.pi
             if angle < 1.0 and hough_lines[j] not in prune_lines:
                 prune_lines.append(j)
-
     for i in prune_lines:
         del hough_lines[i]
 
+    epsilon = sys.float_info.epsilon
+
+
+    '''
     # px,py = intersection(hough_lines[i],hough_lines[j])
-        for i in range(len(hough_lines)-1):
-            for j in range(i+1,len(hough_lines)):
+    #inters = []
+    for i in range(len(hough_lines)):
+        inters = []
+        for j in range(len(hough_lines)):
+            if i != j:
                 px,py = intersection(hough_lines[i],hough_lines[j])
-                
+                inters.append({'x':px,'y':py})
+        slopes = []
+    print(len(inters))
+    '''
+
+
+
+    inters = []
+    for i in range(len(hough_lines)-1):
+        for j in range(i+1,len(hough_lines)):
+            px,py = intersection(hough_lines[i],hough_lines[j])
+            inters.append({'x':int(px),'y':int(py)})
+
+    '''
+    houghs = []
+    for i in range(len(inters)-1):
+        for j in range(i+1,len(inters)):
+            x1,y1,x2,y2 = inters[i]['x'],inters[i]['y'],inters[j]['x'],inters[j]['y']
+            xslope = slope(x1,y1,x2,y2)
+            for line in hough_lines:
+                if line['s']-epsilon <= xslope <= line['s']+epsilon or line['s']-epsilon >= xslope >= line['s']+epsilon:
+                    print(xslope)
+                    houghs.append({
+                        'x1':x1,'y1':y1,'x2':x2,'y2':y2
+                    })
+    '''
+
+    clsn = []
+    for i in range(len(inters)-1):
+        for j in range(i+1,len(inters)):
+            x1,y1,x2,y2 = inters[i]['x'],inters[i]['y'],inters[j]['x'],inters[j]['y']
+            slope_clsn = slope(x1,y1,x2,y2)
+            clsn.append({'x1':x1,'y1':y1,'x2':x2,'y2':y2,'s':slope_clsn})
+
+    houghs = []
+    for line in hough_lines:
+        for seg in clsn:
+            print(line['s'],seg['s'])
+            if line['s']-0.1 <= seg['s'] <= line['s']+0.1:
+
+                houghs.append(seg)
 
 
 
 
+    #x1,y1,x2,y2 = query_line(hough_lines[0])
 
     for line in hough_lines:
-        cv2.line(img,(line['x1'],line['y1']),(line['x2'],line['y2']),(0,255,0),3)
+        x1,y1,x2,y2 = query_line(line)
+        cv2.line(img,(x1,y1),(x2,y2),(0,255,0),3)
 
     res = cv2.resize(img,None,fx=0.5, fy=0.5)
     cv2.imshow('',cv2.cvtColor(res,cv2.COLOR_BGR2RGB))
