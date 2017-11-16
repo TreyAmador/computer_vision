@@ -70,13 +70,23 @@ def k_means_image(img):
     return res2
 
 
+def mean_shift_image(img):
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+    shifted = cv2.pyrMeanShiftFiltering(img,10,10)
+    return shifted
+
+
+
+
 def driver():
     img = init_img('img/peppers.jpg')
     k_means = k_means_image(img)
-    save_img('img/peppers_k_means.jpg',k_means)
     gray = convert_to_gray(img)
     k_means_intensity = k_means_image_intensity(gray)
+    shifted_img = mean_shift_image(img)
+    save_img('img/peppers_k_means.jpg',k_means)
     save_img('img/peppers_k_means_intensity.jpg',k_means_intensity)
+    save_img('img/peppers_mean_shifted.jpg',shifted_img)
 
 
 
