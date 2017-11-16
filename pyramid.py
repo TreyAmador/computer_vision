@@ -1,68 +1,60 @@
 # image blending
 # this works!
 
-
-
 import cv2
 import numpy as np,sys
 
-A = cv2.imread('img/apple.jpg')
-B = cv2.imread('img/orange.jpg')
 
-# generate Gaussian pyramid for A
-G = A.copy()
-gpA = [G]
-for i in range(6):
-    G = cv2.pyrDown(G)
-    gpA.append(G)
-
-# generate Gaussian pyramid for B
-G = B.copy()
-gpB = [G]
-for i in range(6):
-    G = cv2.pyrDown(G)
-    gpB.append(G)
+def init_img(filepath):
+    return cv2.imread(filepath)
 
 
-# generate Laplacian Pyramid for A
-lpA = [gpA[5]]
-for i in range(5,0,-1):
-    size = (gpA[i-1].shape[1], gpA[i-1].shape[0])
-    GE = cv2.pyrUp(gpA[i], dstsize = size)
-    L = cv2.subtract(gpA[i-1],GE)
-    lpA.append(L)
-
-# generate Laplacian Pyramid for B
-lpB = [gpB[5]]
-for i in range(5,0,-1):
-    size = (gpB[i-1].shape[1], gpB[i-1].shape[0])
-    GE = cv2.pyrUp(gpB[i], dstsize = size)
-    L = cv2.subtract(gpB[i-1],GE)
-    lpB.append(L)
+def gen_gaussian(orig):
+    img = orig.copy()
+    pyramid = [img]
+    for i in range(6):
+        img = cv2.pyrDown(img)
+        pyramid.append(img)
+    return pyramid
 
 
-# Now add left and right halves of images in each level
-LS = []
-for la,lb in zip(lpA,lpB):
-    rows,cols,dpt = la.shape
-    ls = np.hstack((la[:,0:int(cols/2)], lb[:,int(cols/2):]))
-    LS.append(ls)
+def gen_laplacian(gauss):
+    pyramid = [gauss[5]]
+    for i in range(5,0,-1):
+        size = (gauss[i-1].shape[1],gauss[i-1].shape[0])
+        GE = cv2.pyrUp(gauss[i],dstsize=size)
+        laplace = cv2.subtract(gauss[i-1],GE)
+        pyramid.append(laplace)
+    return pyramid
 
 
-# now reconstruct
-ls_ = LS[0]
-for i in range(1,6):
-    size = (LS[i].shape[1], LS[i].shape[0])
-    ls_ = cv2.pyrUp(ls_, dstsize = size)
-    ls_ = cv2.add(ls_, LS[i])
+def blend(laplace_a,laplace_b):
+    laplace_sum = []
+    for l_a,l_b in zip(laplace_a,laplace_b):
+        rows,cols,dpt = l_a.shape
+        l_s = np.hstack((l_a[:,0:int(cols/2)], l_b[:,int(cols/2):]))
+        laplace_sum.append(l_s)
+    laplace_pyramid = laplace_sum[0]
+    for i in range(1,6):
+        size = (laplace_sum[i].shape[1],laplace_sum[i].shape[0])
+        laplace_pyramid = cv2.pyrUp(laplace_pyramid,dstsize=size)
+        laplace_pyramid = cv2.add(laplace_pyramid,laplace_sum[i])
+    return laplace_pyramid
 
 
+def driver():
+    img_a = init_img('img/apple.jpg')
+    img_b = init_img('img/orange.jpg')
+    gauss_a = gen_gaussian(img_a)
+    gauss_b = gen_gaussian(img_b)
+    laplace_a = gen_laplacian(gauss_a)
+    laplace_b = gen_laplacian(gauss_b)
+    blended_img = blend(laplace_a,laplace_b)
+    cv2.imwrite('img/apple_orange_blended.jpg',blended_img)
 
-# image with direct connecting each half
-real = np.hstack((A[:,:int(cols/2)],B[:,int(cols/2):]))
 
-cv2.imwrite('img/apple_orange_blended.jpg',ls_)
-
+if __name__ == '__main__':
+    driver()
 
 
 
