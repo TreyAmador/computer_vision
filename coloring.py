@@ -2,10 +2,7 @@ import cv2
 import numpy as np
 from PIL import Image
 import math
-#from scipy.ndimage.morphology import binary_fill_holes
-#import sys.float_info.epsilon as espilon
 import sys
-#from sys.float_info import epsilon
 
 
 def rho_theta(x1,y1,x2,y2):
@@ -13,6 +10,17 @@ def rho_theta(x1,y1,x2,y2):
     rho = math.sqrt(math.pow(d_x,2)+math.pow(d_y,2))
     theta = math.atan2(d_y,d_x)
     return rho,theta
+
+
+def init_img(filepath):
+    pass
+
+
+def show_img(img):
+    res = cv2.resize(img,None,fx=0.5, fy=0.5)
+    cv2.imshow('',res)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 
 def query_line(line):
@@ -63,10 +71,10 @@ def detect_hough_lines():
             b = np.sin(theta)
             x0 = a*rho
             y0 = b*rho
-            x1 = int(x0 + w*(-b))
-            y1 = int(y0 + w*(a))
-            x2 = int(x0 - w*(-b))
-            y2 = int(y0 - w*(a))
+            x1 = int(x0 + 1000*(-b))
+            y1 = int(y0 + 1000*(a))
+            x2 = int(x0 + 1000*(b))
+            y2 = int(y0 + 1000*(-a))
             hough_lines.append({
                 'x1':x1,'y1':y1,'x2':x2,'y2':y2,
                 's':slope(x1,y1,x2,y2),
@@ -79,68 +87,11 @@ def detect_hough_lines():
         for j in range(i+1,len(hough_lines)):
             angle = abs(hough_lines[i]['theta']-hough_lines[j]['theta'])
             angle = angle*180/np.pi
-            if angle < 1.0 and hough_lines[j] not in prune_lines:
+            if angle < 2.0 and hough_lines[j] not in prune_lines:
                 prune_lines.append(j)
     for i in prune_lines:
         del hough_lines[i]
 
-    epsilon = sys.float_info.epsilon
-
-
-    '''
-    # px,py = intersection(hough_lines[i],hough_lines[j])
-    #inters = []
-    for i in range(len(hough_lines)):
-        inters = []
-        for j in range(len(hough_lines)):
-            if i != j:
-                px,py = intersection(hough_lines[i],hough_lines[j])
-                inters.append({'x':px,'y':py})
-        slopes = []
-    print(len(inters))
-    '''
-
-
-
-    inters = []
-    for i in range(len(hough_lines)-1):
-        for j in range(i+1,len(hough_lines)):
-            px,py = intersection(hough_lines[i],hough_lines[j])
-            inters.append({'x':int(px),'y':int(py)})
-
-    '''
-    houghs = []
-    for i in range(len(inters)-1):
-        for j in range(i+1,len(inters)):
-            x1,y1,x2,y2 = inters[i]['x'],inters[i]['y'],inters[j]['x'],inters[j]['y']
-            xslope = slope(x1,y1,x2,y2)
-            for line in hough_lines:
-                if line['s']-epsilon <= xslope <= line['s']+epsilon or line['s']-epsilon >= xslope >= line['s']+epsilon:
-                    print(xslope)
-                    houghs.append({
-                        'x1':x1,'y1':y1,'x2':x2,'y2':y2
-                    })
-    '''
-
-    clsn = []
-    for i in range(len(inters)-1):
-        for j in range(i+1,len(inters)):
-            x1,y1,x2,y2 = inters[i]['x'],inters[i]['y'],inters[j]['x'],inters[j]['y']
-            slope_clsn = slope(x1,y1,x2,y2)
-            clsn.append({'x1':x1,'y1':y1,'x2':x2,'y2':y2,'s':slope_clsn})
-
-    houghs = []
-    for line in hough_lines:
-        for seg in clsn:
-            print(line['s'],seg['s'])
-            if line['s']-0.1 <= seg['s'] <= line['s']+0.1:
-
-                houghs.append(seg)
-
-
-
-
-    #x1,y1,x2,y2 = query_line(hough_lines[0])
 
     for line in hough_lines:
         x1,y1,x2,y2 = query_line(line)
@@ -152,26 +103,47 @@ def detect_hough_lines():
 
 
 def detect_hough_circles():
-    img = cv2.imread('img/pool table.jpg',0)
-    #img = cv2.equalizeHist(img)
-    img = cv2.medianBlur(img,5)
-    cimg = cv2.cvtColor(img,cv2.COLOR_GRAY2BGR)
 
-
-
-    circles = cv2.HoughCircles(img,cv2.HOUGH_GRADIENT,1,20,
+    img = cv2.imread('img/pool table.jpg')
+    gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    gray = cv2.medianBlur(gray,5)
+    cimg = cv2.cvtColor(gray,cv2.COLOR_GRAY2BGR)
+    circles = cv2.HoughCircles(gray,cv2.HOUGH_GRADIENT,1,20,
                                 param1=90,param2=20,minRadius=10,maxRadius=23)
 
+    rad = 26
     if circles is not None:
         circles = np.uint16(np.around(circles))
-        for i in circles[0,:]:
-            cv2.circle(cimg,(i[0],i[1]),i[2],(0,255,0),2)
+        circles = circles[0,:]
+        for i in range(len(circles)):
+            x,y = circles[i][0],circles[i][1]
+            pu = img[y-rad][x]
+            pd = img[y+rad][x]
+            pr = img[y][x+rad]
+            pl = img[y][x-rad]
+            adj = [pu,pd,pr,pl]
+            accum = 0
+            for b,g,r in adj:
+                delta = abs(int(g)-int(b))
+                if delta > 10:
+                    accum =+ 1
+            if accum >= 1:
+                circles[i] = (0,0,0)
 
-        res = cv2.resize(cimg,None,fx=0.5,fy=0.5)
-        cv2.imshow('',res)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        for i in circles:
+            cv2.circle(img,(i[0],i[1]),i[2],(0,255,0),2)
+
+    show_img(img)
 
 
-detect_hough_lines()
-#detect_hough_circles()
+#detect_hough_lines()
+detect_hough_circles()
+
+
+
+def driver():
+    pass
+
+
+if __name__ == '__main__':
+    driver()
