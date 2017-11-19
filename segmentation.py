@@ -34,16 +34,38 @@ def calc_intensity(gray):
 
 
 # this needs updating
-def k_means_intensity(gray):
+def k_means_intensity_plot(gray):
+
     intensity = calc_intensity(gray)
-    Z = np.float32(np.array(intensity))
-    plt.hist(gray.ravel(),256,[0,256])
+    elems = [x for x in range(len(intensity))]
+    Z = np.float32(intensity)
+
+    #Z = zip(elems,Z)
+
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
     flags = cv2.KMEANS_RANDOM_CENTERS
     K = 4
-    compactness,labels,centers = cv2.kmeans(Z,K,None,criteria,10,flags)
-    plt.hist(centers,5,[0,255],color='r')
+    K = 2
+    compactness,label,center = cv2.kmeans(Z,K,None,criteria,10,flags)
+
+    index = []
+    eps = 1
+    for i in range(len(intensity)):
+        for c in center:
+            d = c[0]
+            print(intensity[i])
+            if d-eps <= intensity[i] <= d+eps:
+                index.append(i)
+
+    #print(center,intensity)
+
+    #print(center)
+    print(index)
+
+    plt.scatter(elems,Z)
     plt.show()
+
+
 
 
 def k_means_image_intensity(gray):
@@ -81,6 +103,9 @@ def driver():
     k_means = k_means_image(img)
     gray = convert_to_gray(img)
     k_means_intensity = k_means_image_intensity(gray)
+
+    k_means_intensity_plot(gray)
+
     shifted_img = mean_shift_image(img)
     save_img('img/peppers_k_means.jpg',k_means)
     save_img('img/peppers_k_means_intensity.jpg',k_means_intensity)
