@@ -19,9 +19,9 @@ def show_img(img):
     cv2.destroyAllWindows()
 
 
-def write_img(img):
+def write_img(filepath,img):
 	out = Image.fromarray(img)
-	out.save('img/pool_table_hough_lines.jpg')
+	out.save(filepath)
 
 
 def query_line(line):
@@ -119,21 +119,45 @@ def detect_hough_lines(orig):
 	return out
 
 
-def detect_hough_circles(img):
-	pass
+def detect_hough_circles(orig):
+    img = cv2.cvtColor(np.array(orig),cv2.COLOR_RGB2BGR)
+    gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    gray = cv2.medianBlur(gray,5)
+    cimg = cv2.cvtColor(gray,cv2.COLOR_GRAY2BGR)
+    circles = cv2.HoughCircles(gray,cv2.HOUGH_GRADIENT,1,20,
+                                param1=90,param2=20,minRadius=10,maxRadius=23)
 
-
-
-
+    rad = 26
+    if circles is not None:
+        circles = np.uint16(np.around(circles))
+        circles = circles[0,:]
+        for i in range(len(circles)):
+            x,y = circles[i][0],circles[i][1]
+            pu = img[y-rad][x]
+            pd = img[y+rad][x]
+            pr = img[y][x+rad]
+            pl = img[y][x-rad]
+            adj = [pu,pd,pr,pl]
+            accum = 0
+            for b,g,r in adj:
+                delta = abs(int(g)-int(b))
+                if delta > 10:
+                    accum =+ 1
+            if accum >= 1:
+                circles[i] = (0,0,0)
+        for i in circles:
+            cv2.circle(img,(i[0],i[1]),i[2],(0,255,0),2)
+    out = cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
+    return out
 
 
 
 def driver():
-	img = init_img('img/pool table.jpg')
-	hough_lines = detect_hough_lines(img)
-	hough_circles = detect_hough_circles(img)
-	write_img(hough_lines)
-
+    img = init_img('img/pool table.jpg')
+    hough_lines = detect_hough_lines(img)
+    hough_circles = detect_hough_circles(img)
+    write_img('img/pool_table_hough_lines.jpg',hough_lines)
+    write_img('img/pool_table_hough_circle.jpg',hough_circles)
 
 
 
