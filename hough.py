@@ -46,9 +46,9 @@ def write_img(filepath,img):
         outputs image to directory
     '''
     # convert np array to PIL img
-	out = Image.fromarray(img)
+    out = Image.fromarray(img)
     # write the image data
-	out.save(filepath)
+    out.save(filepath)
 
 
 def query_line(line):
@@ -88,28 +88,28 @@ def img_filter(im):
         filter out unwanted pixel values
     '''
     # generate pixel map from original image`
-	pixel_map = im.load()
+    pixel_map = im.load()
     # create new image from original image
-	img = Image.new(im.mode,im.size)
+    img = Image.new(im.mode,im.size)
     # create new pixel map from new image
-	pixels_new = img.load()
+    pixels_new = img.load()
     # iterate over rows of pixels in image
-	for i in range(img.size[0]):
+    for i in range(img.size[0]):
         # iterate over cols of pixels in image
-		for j in range(img.size[1]):
+        for j in range(img.size[1]):
             # get single pixel from map
-			r,g,b = pixel_map[i,j]
+            r,g,b = pixel_map[i,j]
             # conditional if pixel values are to be filtered
-			if r < 26 and 63 < g and 60 < b:
+            if r < 26 and 63 < g and 60 < b:
                 # if true, return pixel of original image map
                 # to new image map to be returned
-				pixels_new[i,j] = (r,g,b)
+                pixels_new[i,j] = (r,g,b)
             # condition if pixel value to be removed
-			else:
+            else:
                 # if pixel is to be removed, set to black
-				pixels_new[i,j] = (0,0,0)
+                pixels_new[i,j] = (0,0,0)
     # return image as an np array
-	return np.array(img)
+    return np.array(img)
 
 
 def canny_filter(img):
@@ -117,11 +117,11 @@ def canny_filter(img):
         create img with canny lines
     '''
     # create grayscale version of same image
-	gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     # get edges for canny edge detector
-	edges = cv2.Canny(gray,150,200,apertureSize=3)
+    edges = cv2.Canny(gray,150,200,apertureSize=3)
     # return canny edge image
-	return edges
+    return edges
 
 
 def gen_line_collection(lines):
@@ -130,30 +130,30 @@ def gen_line_collection(lines):
         to be used in printing to final output
     '''
     # init empty list of desired lines
-	hough_lines = []
+    hough_lines = []
     # iterate past 0th element in hough line collection
-	for line in lines:
+    for line in lines:
         # iterate through each magnitude and angle
         # value in the collection of lists
-		for rho,theta in line:
+        for rho,theta in line:
             # get x baseline
-			a = np.cos(theta)
+            a = np.cos(theta)
             # get y baseline
-			b = np.sin(theta)
+            b = np.sin(theta)
             # get init x point
-			x0 = a*rho
+            x0 = a*rho
             # get init y point
-			y0 = b*rho
+            y0 = b*rho
             # generate init point on x line
-			x1 = int(x0 + 1600*(-b))
+            x1 = int(x0 + 1600*(-b))
             # generate init point on y line
-			y1 = int(y0 + 1600*(a))
+            y1 = int(y0 + 1600*(a))
             # generate final point on x line
-			x2 = int(x0 + 1600*(b))
+            x2 = int(x0 + 1600*(b))
             # generate final point on y line
-			y2 = int(y0 + 1600*(-a))
+            y2 = int(y0 + 1600*(-a))
             # add line into dict of lines
-			hough_lines.append({
+            hough_lines.append({
                 # create key for x and y vals
                 'x1':x1,'y1':y1,'x2':x2,'y2':y2,
                 # create key for slope
@@ -162,7 +162,7 @@ def gen_line_collection(lines):
                 'theta':math.atan2(y2-y1,x2-x1)
 			})
     # return hough line dict
-	return hough_lines
+    return hough_lines
 
 
 def prune_hough_lines(hough_lines):
@@ -171,24 +171,24 @@ def prune_hough_lines(hough_lines):
         not be committed to final image
     '''
     # init list of final pruned lines list
-	prune_lines = []
+    prune_lines = []
     # iterate over list of lines
-	for i in range(len(hough_lines)-1):
+    for i in range(len(hough_lines)-1):
         # iterate past current elem in lines
-		for j in range(i+1,len(hough_lines)):
+        for j in range(i+1,len(hough_lines)):
             # find angle difference
-			angle = abs(hough_lines[i]['theta']-hough_lines[j]['theta'])
+            angle = abs(hough_lines[i]['theta']-hough_lines[j]['theta'])
             # convert angle difference to degrees
-			angle = angle*180/np.pi
+            angle = angle*180/np.pi
             # condition to remove list if lines are too close together
             # skip if already present in list
-			if angle < 2.0 and hough_lines[j] not in prune_lines:
+            if angle < 2.0 and hough_lines[j] not in prune_lines:
                 # remove line if not too close to other line
-				prune_lines.append(j)
+                prune_lines.append(j)
     # delete lines that are not necessary
-	for i in prune_lines:
+    for i in prune_lines:
         # delete keyword for list
-		del hough_lines[i]
+        del hough_lines[i]
 
 
 def draw_lines(img,hough_lines):
@@ -196,19 +196,66 @@ def draw_lines(img,hough_lines):
         add the lines to the img
     '''
     # convert to np array from PIL img
-	drawn = np.array(img)
+    drawn = np.array(img)
     # iterate through hough lines
-	for line in hough_lines:
+    for line in hough_lines:
         # get four points to represent lines
-		x1,y1,x2,y2 = query_line(line)
+        x1,y1,x2,y2 = query_line(line)
         # draw line on the image
-		cv2.line(drawn,(x1,y1),(x2,y2),(0,255,0),3)
+        cv2.line(drawn,(x1,y1),(x2,y2),(0,255,0),3)
     # return image with drawn-on lines
-	return drawn
+    return drawn
+
+
+def clean_line_intersection(line_a,line_b,i_a,i_b):
+    '''
+        remove the overlap of two passed lines
+    '''
+    # get intersection point of two lines
+    inter_ab = intersection(line_a,line_b)
+    # query slope of first line
+    slope_a = line_a['s']
+    # quer slope of second line
+    slope_b = line_b['s']
+    # if index is one, negative slope
+    if i_a == '1': off_a = -20
+    # if index is two, positive slope
+    else: off_a = 20
+    # if index is one, negative slope
+    if i_b == '1': off_b = -20
+    # if index is two, positive slope
+    else: off_b = 20
+    # generate new endpoint with offset
+    line_a['x'+i_a] = int(inter_ab[0]+off_a)
+    # generate new endpoint with slope of other offset
+    line_a['y'+i_a] = int(inter_ab[1]+off_a*slope_a)
+    # generate new endpoint with offset
+    line_b['x'+i_b] = int(inter_ab[0]+off_b)
+    # generate new endpoint with slope of other offset
+    line_b['y'+i_b] = int(inter_ab[1]+off_b*slope_b)
+
 
 
 def clean_lines(hough_lines):
-	pass
+    '''
+        remove part of lines that go over intersection of pool table
+    '''
+    # get first line
+    line_a = hough_lines[0]
+    # get second line
+    line_b = hough_lines[1]
+    # get third line
+    line_c = hough_lines[2]
+    # get fourth line
+    line_d = hough_lines[3]
+    # remove end of two lines
+    clean_line_intersection(line_a,line_b,'1','1')
+    # remove end of two lines
+    clean_line_intersection(line_b,line_c,'2','1')
+    # remove end of two lines
+    clean_line_intersection(line_c,line_d,'2','2')
+    # remove end of two lines
+    clean_line_intersection(line_d,line_a,'1','2')
 
 
 def detect_hough_lines(orig):
@@ -216,11 +263,11 @@ def detect_hough_lines(orig):
         function to draw hough lines onto image
     '''
     # copy the original image
-	im = orig.copy()
+    im = orig.copy()
     # remove pixels that interfere with hough line drawing
-	img = img_filter(im)
+    img = img_filter(im)
     # generate canny edges image
-	edges = canny_filter(img)
+    edges = canny_filter(img)
     # opencv hough lines function
     # lines are represented as rho and theta
     # creates 2D array to hold parameters
@@ -234,15 +281,15 @@ def detect_hough_lines(orig):
     # and lines above minimum threshold of votes are kept
     lines = cv2.HoughLines(edges,1,np.pi/180,150)
     # generate lines to place on image
-	hough_lines = gen_line_collection(lines)
+    hough_lines = gen_line_collection(lines)
     # remove lines if angle too small
-	prune_hough_lines(hough_lines)
+    prune_hough_lines(hough_lines)
     # clean lines to prevent overextension
-	clean_lines(hough_lines)
+    clean_lines(hough_lines)
     # draw lines onto final image
-	out = draw_lines(orig,hough_lines)
+    out = draw_lines(orig,hough_lines)
     # return output image
-	return out
+    return out
 
 
 def detect_hough_circles(orig):
@@ -309,6 +356,82 @@ def detect_hough_circles(orig):
     return out
 
 
+def add_line_intersection(corners,line_a,line_b,i_a,i_b):
+    '''
+        remove the overlap of two passed lines
+    '''
+    # get intersection point of two lines
+    x,y = intersection(line_a,line_b)
+    # append each element to the list of corners
+    corners.append((int(x),int(y),50))
+
+
+def corner_intersections(hough_lines):
+    '''
+        the intersection off all hough line corners
+    '''
+    # get first line
+    line_a = hough_lines[0]
+    # get second line
+    line_b = hough_lines[1]
+    # get third line
+    line_c = hough_lines[2]
+    # get fourth line
+    line_d = hough_lines[3]
+    # init list of empty corners to append new corners to
+    corners = []
+    # remove end of two lines
+    add_line_intersection(corners,line_a,line_b,'1','1')
+    # remove end of two lines
+    add_line_intersection(corners,line_b,line_c,'2','1')
+    # remove end of two lines
+    add_line_intersection(corners,line_c,line_d,'2','2')
+    # remove end of two lines
+    add_line_intersection(corners,line_d,line_a,'1','2')
+    # return list of corners
+    return corners
+
+
+def detect_corners(orig):
+    '''
+        function to draw hough lines onto image
+    '''
+    # copy the original image
+    im = orig.copy()
+    # remove pixels that interfere with hough line drawing
+    img = img_filter(im)
+    # generate canny edges image
+    edges = canny_filter(img)
+    # opencv hough lines function
+    # lines are represented as rho and theta
+    # creates 2D array to hold parameters
+    # find lines that pass through a given point
+    # as r = x*cos(a) + y*sin(b)
+    # for all points in an image, if the curves
+    # of different points intersect in plane theta-rho
+    # then both points are on the same line a line can
+    # be detected by finding number of intersection
+    # between curves each intersection is a vote,
+    # and lines above minimum threshold of votes are kept
+    lines = cv2.HoughLines(edges,1,np.pi/180,150)
+    # generate lines to place on image
+    hough_lines = gen_line_collection(lines)
+    # remove lines if angle too small
+    prune_hough_lines(hough_lines)
+    # clean lines to prevent overextension
+    clean_lines(hough_lines)
+    # detect the pool table corners
+    corners = corner_intersections(hough_lines)
+    # convert PIL img to np array
+    out = np.array(orig)
+    # iterate through the list of corners
+    for i in corners:
+        # add a green circle to the image to designate corner
+        cv2.circle(out,(i[0],i[1]),i[2],(0,255,0),2)
+    # return output image with corners drawn upon
+    return out
+
+
 def driver():
     '''
         calls the hough functions
@@ -319,18 +442,21 @@ def driver():
     hough_lines = detect_hough_lines(img)
     # call main hough circles function
     hough_circles = detect_hough_circles(img)
+    # calls function to detect corners
+    hough_corners = detect_corners(img)
     # output the hough line image to dir
     write_img('img/pool_table_hough_lines.jpg',hough_lines)
     # output the hough circle image to dir
     write_img('img/pool_table_hough_circle.jpg',hough_circles)
-
+    # output the corner detection img of dir
+    write_img('img/pool_table_hough_corners.jpg',hough_corners)
 
 
 if __name__ == '__main__':
     '''
         entry point of program
     '''
-	driver()
+    driver()
 
 
 # end of file
