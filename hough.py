@@ -12,6 +12,8 @@ def init_img(filepath):
     '''
         get image for use in pixel gradients
     '''
+    # return PIL image object
+    # representing image at filepath
     return Image.open(filepath)
 
 
@@ -19,6 +21,8 @@ def init_img_brg(filepath):
     '''
         get image using opencv color arrangement
     '''
+    # return opencv numpy array
+    # representing image at filepath
     return cv2.imread(filepath)
 
 
@@ -26,9 +30,14 @@ def show_img(img):
     '''
         display image for debugging purposes
     '''
+    # resize image to half size
     res = cv2.resize(img,None,fx=0.5, fy=0.5)
+    # show image in untitled image
     cv2.imshow('',res)
+    # wait until a key is pressed to
+    # prevent window from closing
     cv2.waitKey(0)
+    # destroy the window
     cv2.destroyAllWindows()
 
 
@@ -212,8 +221,17 @@ def detect_hough_lines(orig):
 	img = img_filter(im)
     # generate canny edges image
 	edges = canny_filter(img)
-    # call opencv hough lines function
-    # TODO elaborate on this, go through algorithm
+    # opencv hough lines function
+    # lines are represented as rho and theta
+    # creates 2D array to hold parameters
+    # find lines that pass through a given point
+    # as r = x*cos(a) + y*sin(b)
+    # for all points in an image, if the curves
+    # of different points intersect in plane theta-rho
+    # then both points are on the same line a line can
+    # be detected by finding number of intersection
+    # between curves each intersection is a vote,
+    # and lines above minimum threshold of votes are kept
     lines = cv2.HoughLines(edges,1,np.pi/180,150)
     # generate lines to place on image
 	hough_lines = gen_line_collection(lines)

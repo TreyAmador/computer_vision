@@ -107,6 +107,11 @@ def apply_k_means_of_image(img,Z):
     # that the data will be divided into
     K = 8
     # apply the k means algorithm
+    # initialized by randomly choosing centroids
+    # calculates the euclidean distance between the centroids
+    # calcualte average of each cluster to create new centroid values
+    # new centroids will be labeled with 0 or 1, depending on
+    # whether or not the data is closer to C1 or C2, respectively
     # the centers is an array of the number of centers of clusters
     ret,label,center=cv2.kmeans(Z,K,None,criteria,10,cv2.KMEANS_RANDOM_CENTERS)
     # create an array of 8 bit representing center of cluster values
@@ -125,7 +130,13 @@ def mean_shift_image(img):
         apply means shift to image based on
         opencv pyr mean shift algorithm
     '''
-    # apply mean shift anglorithm to shifted image
+    # apply mean shift algorithm to shifted image
+    # pyrMeanShiftFiltering applies the initial step
+    # of meanshift segmentation of image
+    # output is the posterized image with color gradients flattened
+    # over a neighborhood of pixels for each pixel,
+    # the average spatial value and average color
+    # a gaussian pyramid of given levels is built
     shifted = cv2.pyrMeanShiftFiltering(img,10,10)
     # return shifted image to calling function
     return shifted
