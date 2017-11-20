@@ -207,7 +207,7 @@ def draw_lines(img,hough_lines):
     return drawn
 
 
-def clean_line_intersection(line_a,line_b,i_a,i_b):
+def clean_line_intersection(line_a,line_b,i_a,i_b,offset):
     '''
         remove the overlap of two passed lines
     '''
@@ -218,13 +218,13 @@ def clean_line_intersection(line_a,line_b,i_a,i_b):
     # quer slope of second line
     slope_b = line_b['s']
     # if index is one, negative slope
-    if i_a == '1': off_a = -20
+    if i_a == '1': off_a = -offset
     # if index is two, positive slope
-    else: off_a = 20
+    else: off_a = offset
     # if index is one, negative slope
-    if i_b == '1': off_b = -20
+    if i_b == '1': off_b = -offset
     # if index is two, positive slope
-    else: off_b = 20
+    else: off_b = offset
     # generate new endpoint with offset
     line_a['x'+i_a] = int(inter_ab[0]+off_a)
     # generate new endpoint with slope of other offset
@@ -249,13 +249,13 @@ def clean_lines(hough_lines):
     # get fourth line
     line_d = hough_lines[3]
     # remove end of two lines
-    clean_line_intersection(line_a,line_b,'1','1')
+    clean_line_intersection(line_a,line_b,'1','1',50)
     # remove end of two lines
-    clean_line_intersection(line_b,line_c,'2','1')
+    clean_line_intersection(line_b,line_c,'2','1',50)
     # remove end of two lines
-    clean_line_intersection(line_c,line_d,'2','2')
+    clean_line_intersection(line_c,line_d,'2','2',20)
     # remove end of two lines
-    clean_line_intersection(line_d,line_a,'1','2')
+    clean_line_intersection(line_d,line_a,'1','2',20)
 
 
 def detect_hough_lines(orig):
