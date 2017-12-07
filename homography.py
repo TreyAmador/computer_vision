@@ -150,80 +150,92 @@ def overhead_corners(img):
 	return inters
 
 
-def homographic_image(persp_img,persp_inters,over_img,over_inters):
-	persp = np.array([[i['x'],i['y']] for i in persp_inters])
-	over = np.array([[i['x'],i['y']] for i in over_inters])
-	h,status = cv2.findHomography(persp,over)
-	l,w,_ = over_img.shape
-	res = cv2.warpPerspective(persp_img,h,(w,l))
-	show_img(res)
+def detect_hough_circles(img):
+	'''
+		a function to draw circles around an image
+	'''
+    # convert color image to grayscale
+	gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    # blur the image with predefined median blur
+	gray = cv2.medianBlur(gray,5)
+    # convet from gray to opencv image scheme
+	cimg = cv2.cvtColor(gray,cv2.COLOR_GRAY2BGR)
+    # call hough circles opencv function
+    # the values were determined empircally
+	circles = cv2.HoughCircles(gray,cv2.HOUGH_GRADIENT,1,20,
+                                param1=90,param2=20,minRadius=10,maxRadius=23)
+
+    # radian val greater than max radius of circle
+	rad = 26
+    # if circle list is empty, do not process further
+	if circles is not None:
+    	# convert circles to 16bit circle list
+		circles = np.uint16(np.around(circles))
+		# get necessary elements from circle list
+		circles = list(circles[0,:])
+        # iterate through list of circles
+		i = 0
+		# continue to iterate until past length of array
+		while i < len(circles):
+            # x and y points of circle
+			x,y = circles[i][0],circles[i][1]
+            # return color of pixel above circle
+			pu = img[y-rad][x]
+            # return color of pixel below circle
+			pd = img[y+rad][x]
+            # return color of pixel to right of circle
+			pr = img[y][x+rad]
+            # return color of pixel to left of circle
+			pl = img[y][x-rad]
+            # create list of all adjacent pixel colors
+			adj = [pu,pd,pr,pl]
+            # iterator for number of times pixel value is out of range
+			accum = 0
+            # iterate through pixels of adjacent colors
+			for b,g,r in adj:
+                # take difference between blue and green magnitude
+				delta = abs(int(g)-int(b))
+                # if mag is greater than 10
+                # assume color is not pool table
+				if delta > 10:
+                    # penalized iterator increments
+					accum =+ 1
+            # if too many bad values
+			if accum >= 1:
+                # clear the circle if it is not on the pool table
+				del circles[i]
+			else:
+				i += 1
+
+		return circles
 
 
-def homographic_transform(persp_inters,over_inters):
+
+def homographic_transform(persp_inters,over_inters,vertices):
 	persp = np.array([[i['x'],i['y'],1] for i in persp_inters])
 	over = np.array([[i['x'],i['y'],1] for i in over_inters])
 	H,status = cv2.findHomography(persp,over)
-
-	#src = np.array(over,dtype=np.float32)
-	#out = cv2.perspectiveTransform(persp,src,H)
-	#print(out)
-
-	#for p in persp:
-	#	print(p)
-	#print('')
-
-	coords = np.array([np.matmul(H, p) for p in persp])
-
-	#for c in coords:
-	#	print(c)
-
-	#for c in coords:
-	#	lmbd = c[2]
-	#	c[0] = c[0] / lmbd
-	#	c[1] = c[1] / lmbd
-
-	projections = np.array([[c[0]/c[2],c[1]/c[2]] for c in coords],dtype=np.uint32)
-
-	#print('')
-	#for p in projections:
-	#	print(p)
-
+	trans = np.array([np.matmul(H, v) for v in vertices])
+	projections = np.array([[t[0]/t[2],t[1]/t[2]] for t in trans],dtype=np.uint32)
 	return projections
-
 
 
 
 def driver():
 	persp_img = init_img('img/pool table.jpg')
 	persp_inters = perspective_corners(persp_img)
-
 	over_img = init_img('img/pool overhead.jpg')
 	over_inters = overhead_corners(over_img)
 
 	swap_indeces(over_inters,0,3)
 
-	#for i in persp_inters:
-	#	cv2.circle(persp_img,(i['x'],i['y']),20,(0,255,0),3)
-	#cv2.imwrite('img/pool table perspective.jpg',persp_img)
-	#for i in over_inters:
-	#	cv2.circle(over_img,(i['x'],i['y']),20,(0,255,0),3)
-	#cv2.imwrite('img/pool table overhead.jpg',over_img)
+	circles = detect_hough_circles(persp_img)
+	vertices = np.array([[c[0],c[1],1] for c in circles])
+	projections = homographic_transform(persp_inters,over_inters,vertices)
 
-	#homographic_image(persp_img,persp_inters,over_img,over_inters)
-
-	proj = homographic_transform(persp_inters,over_inters)
-
-	for p in proj:
-		cv2.circle(over_img,(p[0],p[1]),20,(0,255,0),3)
-
-	for p in over_inters:
-		cv2.circle(over_img,(p['x'],p['y']),20,(0,0,255),3)
-
+	for p in projections:
+		cv2.circle(over_img,(p[0],p[1]),20,(0,255,0),2)
 	cv2.imwrite('img/pool table projections.jpg',over_img)
-
-
-
-
 
 
 if __name__ == '__main__':
