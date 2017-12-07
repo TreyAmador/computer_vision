@@ -5,7 +5,6 @@ import numpy as np
 import cv2
 
 
-
 def out_path(filepath,suffix):
     fp = filepath.split('.')
     return fp[0]+suffix+'.'+fp[1]
@@ -54,11 +53,6 @@ def driver():
 
 if __name__ == '__main__':
     driver()
-
-
-
-
-
 
 
 
