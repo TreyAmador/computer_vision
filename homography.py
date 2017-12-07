@@ -150,14 +150,46 @@ def overhead_corners(img):
 	return inters
 
 
-def homographic_alignment(persp_img,persp_inters,over_img,over_inters):
+def homographic_image(persp_img,persp_inters,over_img,over_inters):
 	persp = np.array([[i['x'],i['y']] for i in persp_inters])
 	over = np.array([[i['x'],i['y']] for i in over_inters])
 	h,status = cv2.findHomography(persp,over)
 	l,w,_ = over_img.shape
 	res = cv2.warpPerspective(persp_img,h,(w,l))
-
 	show_img(res)
+
+
+def homographic_transform(persp_inters,over_inters):
+	persp = np.array([[i['x'],i['y'],1] for i in persp_inters])
+	over = np.array([[i['x'],i['y'],1] for i in over_inters])
+	H,status = cv2.findHomography(persp,over)
+
+	#src = np.array(over,dtype=np.float32)
+	#out = cv2.perspectiveTransform(persp,src,H)
+	#print(out)
+
+	#for p in persp:
+	#	print(p)
+	#print('')
+
+	coords = np.array([np.matmul(H, p) for p in persp])
+
+	#for c in coords:
+	#	print(c)
+
+	#for c in coords:
+	#	lmbd = c[2]
+	#	c[0] = c[0] / lmbd
+	#	c[1] = c[1] / lmbd
+
+	projections = np.array([[c[0]/c[2],c[1]/c[2]] for c in coords],dtype=np.uint32)
+
+	#print('')
+	#for p in projections:
+	#	print(p)
+
+	return projections
+
 
 
 
@@ -177,7 +209,18 @@ def driver():
 	#	cv2.circle(over_img,(i['x'],i['y']),20,(0,255,0),3)
 	#cv2.imwrite('img/pool table overhead.jpg',over_img)
 
-	homographic_alignment(persp_img,persp_inters,over_img,over_inters)
+	#homographic_image(persp_img,persp_inters,over_img,over_inters)
+
+	proj = homographic_transform(persp_inters,over_inters)
+
+	for p in proj:
+		cv2.circle(over_img,(p[0],p[1]),20,(0,255,0),3)
+
+	for p in over_inters:
+		cv2.circle(over_img,(p['x'],p['y']),20,(0,0,255),3)
+
+	cv2.imwrite('img/pool table projections.jpg',over_img)
+
 
 
 
