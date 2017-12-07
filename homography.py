@@ -7,7 +7,7 @@ def init_img(filepath):
 
 
 def show_img(img):
-	img_min = cv2.resize(img,None,fx=0.5,fy=0.5)
+	img_min = cv2.resize(img,None,fx=0.25,fy=0.25)
 	cv2.imshow('',img_min)
 	cv2.waitKey(0)
 	cv2.destroyAllWindows()
@@ -48,6 +48,10 @@ def intersection(line_a,line_b):
     return px/pn,py/pn
 
 
+def swap_indeces(arr,a,b):
+	arr[a],arr[b] = arr[b],arr[a]
+
+
 def get_intersections(lines,h,w):
 	inter = []
 	size = len(lines)
@@ -81,11 +85,8 @@ def filter_img(img):
 
 
 def hough_lines(mask):
-	#img = cv2.imread('dave.jpg')
-	#gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 	gray = mask
 	edges = cv2.Canny(gray,150,200,apertureSize = 3)
-	#show_img(edges)
 	lines = cv2.HoughLines(edges,1,np.pi/90,110)
 	hough_lines = []
 	for line in lines:
@@ -98,31 +99,85 @@ def hough_lines(mask):
 			y1 = int(y0 + 1000*(a))
 			x2 = int(x0 - 1000*(-b))
 			y2 = int(y0 - 1000*(a))
-			#cv2.line(img,(x1,y1),(x2,y2),(0,255,0),2)
 			hough_lines.append(init_line(x1,y1,x2,y2))
-	#cv2.imwrite('houghlines3.jpg',img)
-	#show_img(img)
-	#return img
 	return hough_lines
 
 
-def driver():
-	img = init_img('img/pool table.jpg')
+def perspective_corners(img):
+	h,w,_ = img.shape
 	fltr = filter_img(img)
 	lines = hough_lines(fltr)
-
-	# put this elsewhere
-	h,w,_ = img.shape
 	inters = get_intersections(lines,h,w)
-
-	for i in inters:
-		cv2.circle(img,(i['x'],i['y']),20,(0,255,0))
-	cv2.imwrite('img/pool hough circles.jpg',img)
+	return inters
 
 
+def overhead_corners(img):
+	grey = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+	ret,thresh = cv2.threshold(grey,250,255,cv2.THRESH_BINARY)
+	kernel = np.ones((7,7),np.uint8)
+	opening = cv2.morphologyEx(thresh,cv2.MORPH_OPEN,kernel)
+	dilation = cv2.dilate(opening,kernel,iterations = 50)
 
-	#show_img(fltr)
-	#cv2.imwrite('img/pool table filter.jpg',hough)
+	edges = cv2.Canny(dilation,150,200,apertureSize = 3)
+	lines = cv2.HoughLines(edges,1,np.pi/90,200)
+	hough_lines = []
+	for line in lines:
+		for rho,theta in line:
+			a = np.cos(theta)
+			b = np.sin(theta)
+			x0 = a*rho
+			y0 = b*rho
+			x1 = int(x0 + 1000*(-b))
+			y1 = int(y0 + 1000*(a))
+			x2 = int(x0 - 1000*(-b))
+			y2 = int(y0 - 1000*(a))
+			hough_lines.append(init_line(x1,y1,x2,y2))
+
+	lines_a = hough_lines[:-1]
+	lines_b = hough_lines[1:]
+	h,w,_ = img.shape
+	inters = []
+	for line_a in lines_a:
+		for line_b in lines_b:
+			x,y = intersection(line_a,line_b)
+			p = init_point(x,y)
+			not_present = True
+			for i in inters:
+				if i['x']-2 <= p['x'] <= i['x']+2 and i['y']-2 <= p['y'] <= i['y']+2:
+					not_present = False
+			if 0 <= p['x'] <= w and 0 <= p['y'] <= h and not_present:
+				inters.append(p)
+	return inters
+
+
+def homographic_alignment(persp_img,persp_inters,over_img,over_inters):
+	persp = np.array([[i['x'],i['y']] for i in persp_inters])
+	over = np.array([[i['x'],i['y']] for i in over_inters])
+	h,status = cv2.findHomography(persp,over)
+	l,w,_ = over_img.shape
+	res = cv2.warpPerspective(persp_img,h,(w,l))
+
+	show_img(res)
+
+
+
+def driver():
+	persp_img = init_img('img/pool table.jpg')
+	persp_inters = perspective_corners(persp_img)
+
+	over_img = init_img('img/pool overhead.jpg')
+	over_inters = overhead_corners(over_img)
+
+	swap_indeces(over_inters,0,3)
+
+	#for i in persp_inters:
+	#	cv2.circle(persp_img,(i['x'],i['y']),20,(0,255,0),3)
+	#cv2.imwrite('img/pool table perspective.jpg',persp_img)
+	#for i in over_inters:
+	#	cv2.circle(over_img,(i['x'],i['y']),20,(0,255,0),3)
+	#cv2.imwrite('img/pool table overhead.jpg',over_img)
+
+	homographic_alignment(persp_img,persp_inters,over_img,over_inters)
 
 
 
