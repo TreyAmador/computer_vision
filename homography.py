@@ -6,8 +6,8 @@ def init_img(filepath):
 	return cv2.imread(filepath)
 
 
-def show_img(img):
-	img_min = cv2.resize(img,None,fx=0.25,fy=0.25)
+def show_img(img,fct=1):
+	img_min = cv2.resize(img,None,fx=1/fct,fy=1/fct)
 	cv2.imshow('',img_min)
 	cv2.waitKey(0)
 	cv2.destroyAllWindows()
@@ -210,7 +210,6 @@ def detect_hough_circles(img):
 		return circles
 
 
-
 def homographic_transform(persp_inters,over_inters,vertices):
 	persp = np.array([[i['x'],i['y'],1] for i in persp_inters])
 	over = np.array([[i['x'],i['y'],1] for i in over_inters])
@@ -219,6 +218,34 @@ def homographic_transform(persp_inters,over_inters,vertices):
 	projections = np.array([[t[0]/t[2],t[1]/t[2]] for t in trans],dtype=np.uint32)
 	return projections
 
+
+def project_images(img_vert,vertices,img_proj,projections):
+	img = img_proj.copy()
+	kernel = np.ones((5,5),np.uint8)
+	lower_green = np.array([63,64,0])
+	upper_green = np.array([255,255,33])
+	fct = 25
+	d_fct = fct*2
+	for vert,proj in zip(vertices,projections):
+		xv,yv = vert[0],vert[1]
+		mat = np.zeros(shape=(fct*2,fct*2,3),dtype=np.uint8)
+		cv2.circle(mat,(fct,fct),fct,(255,255,255),-1)
+		roi = img_vert[yv-fct:yv+fct,xv-fct:xv+fct]
+		circ = cv2.bitwise_and(roi,mat)
+		smooth = 255-cv2.inRange(circ,lower_green,upper_green)
+		clr_mask = cv2.cvtColor(smooth,cv2.COLOR_GRAY2BGR)
+		circ_clr = cv2.morphologyEx(clr_mask, cv2.MORPH_OPEN, kernel)
+		project = cv2.bitwise_and(circ,circ_clr)
+		res_proj = cv2.resize(project,None,fx=2,fy=2)
+		xp,yp = proj[0],proj[1]
+		subsection = img[yp-d_fct:yp+d_fct,xp-d_fct:xp+d_fct]
+		for i in range(res_proj.shape[0]):
+			for j in range(res_proj.shape[1]):
+				b,g,r = res_proj[i,j]
+				if b != 0 and g != 0 and b != 0:
+					subsection[i,j] = res_proj[i,j]
+		img[yp-d_fct:yp+d_fct,xp-d_fct:xp+d_fct] = subsection
+	return img
 
 
 def driver():
@@ -233,9 +260,8 @@ def driver():
 	vertices = np.array([[c[0],c[1],1] for c in circles])
 	projections = homographic_transform(persp_inters,over_inters,vertices)
 
-	for p in projections:
-		cv2.circle(over_img,(p[0],p[1]),20,(0,255,0),2)
-	cv2.imwrite('img/pool table projections.jpg',over_img)
+	img = project_images(persp_img,vertices,over_img,projections)
+	show_img(img,4)
 
 
 if __name__ == '__main__':
